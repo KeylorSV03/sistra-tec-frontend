@@ -5,7 +5,11 @@ import { Upload, X } from "lucide-react";
  * Drag-and-drop / click file upload zone.
  * Calls onChange(file) when a file is selected.
  */
-export default function FileDropzone({ onChange, accept = "image/png,image/jpeg" }) {
+export default function FileDropzone({
+  onChange,
+  accept = "image/png,image/jpeg",
+  label = "Foto de los artículos",
+}) {
   const [preview, setPreview] = useState(null);
   const inputRef = useRef(null);
 
@@ -35,23 +39,31 @@ export default function FileDropzone({ onChange, accept = "image/png,image/jpeg"
     >
       {preview ? (
         <div className="relative">
-          <img src={preview} alt="preview" className="w-full h-44 object-cover" />
+          <img
+            src={preview}
+            alt="Vista previa de la imagen seleccionada"
+            className="w-full h-44 object-cover"
+          />
           <button
             type="button"
             onClick={clear}
-            className="absolute top-2 right-2 bg-white rounded-full p-1 shadow"
+            aria-label="Quitar imagen seleccionada"
+            className="absolute top-2 right-2 bg-white rounded-full p-1 shadow focus:outline-none focus:ring-2 focus:ring-primary-400"
           >
-            <X className="w-4 h-4 text-gray-600" />
+            <X aria-hidden="true" className="w-4 h-4 text-gray-600" />
           </button>
         </div>
       ) : (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="w-full flex flex-col items-center gap-2 py-10 text-gray-400 hover:bg-gray-50 transition"
+          aria-label={`Seleccionar ${label}`}
+          className="w-full flex flex-col items-center gap-2 py-10 text-gray-600 hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-primary-400"
         >
-          <Upload className="w-8 h-8" />
-          <span className="text-sm">Arrastrá una imagen aquí o hacé clic para seleccionar</span>
+          <Upload aria-hidden="true" className="w-8 h-8" />
+          <span className="text-sm">
+            Arrastrá una imagen aquí o hacé clic para seleccionar
+          </span>
           <span className="text-xs">PNG, JPG hasta 5MB</span>
         </button>
       )}
@@ -60,6 +72,7 @@ export default function FileDropzone({ onChange, accept = "image/png,image/jpeg"
         type="file"
         accept={accept}
         className="hidden"
+        aria-label={label}
         onChange={(e) => handleFile(e.target.files?.[0])}
       />
     </div>

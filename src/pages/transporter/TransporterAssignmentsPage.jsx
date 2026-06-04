@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { MapPin, User } from "lucide-react";
 
 import { useTransporterNav } from "../../hooks/useTransporterNav.jsx";
+import { usePageTitle } from "../../hooks/usePageTitle.js";
 import { transporterService } from "../../services/api";
 import Sidebar from "../../components/modules/sidebar/Sidebar";
 import DashboardLayout from "../../components/modules/sidebar/DashboardLayout";
@@ -12,6 +13,7 @@ import DonationIcon from "../../components/ui/DonationIcon";
 import Button from "../../components/ui/Button";
 
 export default function TransporterAssignmentsPage() {
+  usePageTitle("Mis asignaciones");
   const navItems = useTransporterNav();
   const navigate = useNavigate();
   const [assignments, setAssignments] = useState([]);
@@ -34,9 +36,9 @@ export default function TransporterAssignmentsPage() {
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         {loading ? (
-          <p className="text-sm text-gray-400 text-center py-10">Cargando...</p>
+          <p role="status" className="text-sm text-gray-600 text-center py-10">Cargando...</p>
         ) : assignments.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-10">
+          <p className="text-sm text-gray-600 text-center py-10">
             No tenés asignaciones activas.
           </p>
         ) : (
@@ -48,18 +50,18 @@ export default function TransporterAssignmentsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <p className="font-medium text-gray-800">{a.tipoDonacion}</p>
-                      <span className="text-xs text-gray-400 font-mono">{a.donacionId}</span>
+                      <span className="text-xs text-gray-600 font-mono">{a.donacionId}</span>
                     </div>
                     <p className="text-sm text-gray-500">
                       {a.cantidad} {a.unidad}
                     </p>
                     <div className="flex items-center gap-4 mt-2 flex-wrap text-xs text-gray-500">
                       <span className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
+                        <MapPin aria-hidden="true" className="w-3 h-3" />
                         {a.direccionRecogida}
                       </span>
                       <span className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
+                        <User aria-hidden="true" className="w-3 h-3" />
                         Donante: {a.donante}
                       </span>
                     </div>
@@ -72,8 +74,9 @@ export default function TransporterAssignmentsPage() {
                     <Button
                       className="!text-xs !px-3 !py-1.5"
                       onClick={() => navigate(`/transporter/assignments/${a.id}`)}
+                      aria-label={`Gestionar asignación ${a.donacionId}, ${a.tipoDonacion}`}
                     >
-                      Gestionar →
+                      Gestionar asignación
                     </Button>
                   </div>
                 </div>

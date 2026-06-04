@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { toast } from "react-toastify";
 
 import { useAdminNav } from "../../hooks/useAdminNav.jsx";
+import { usePageTitle } from "../../hooks/usePageTitle.js";
 import { inventoryService } from "../../services/api";
 import Sidebar from "../../components/modules/sidebar/Sidebar";
 import DashboardLayout from "../../components/modules/sidebar/DashboardLayout";
@@ -25,6 +26,7 @@ const TABS = [
 ];
 
 export default function AdminInventoryPage() {
+  usePageTitle("Gestión de inventario");
   const navItems = useAdminNav();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -80,9 +82,10 @@ export default function AdminInventoryPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div className="flex gap-3 mb-5 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
+              aria-label="Buscar inventario por tipo o ID"
               placeholder="Buscar por tipo o ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -93,20 +96,21 @@ export default function AdminInventoryPage() {
         </div>
 
         {loading ? (
-          <p className="text-sm text-gray-400 text-center py-10">Cargando...</p>
+          <p role="status" className="text-sm text-gray-600 text-center py-10">Cargando...</p>
         ) : (
           <table className="w-full text-sm">
+            <caption className="sr-only">Listado de inventario del sistema</caption>
             <thead>
-              <tr className="text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100">
+              <tr className="text-xs text-gray-600 uppercase tracking-wider border-b border-gray-100">
                 {["ID", "Tipo", "Cantidad", "Estado", "Asignado a", "Recibido", "Acción"].map((h) => (
-                  <th key={h} className="text-left pb-3 font-medium">{h}</th>
+                  <th key={h} scope="col" className="text-left pb-3 font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filtered.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50 transition">
-                  <td className="py-4 text-gray-400 font-mono text-xs">{item.id}</td>
+                  <td className="py-4 text-gray-700 font-mono text-xs">{item.id}</td>
                   <td className="py-4">
                     <div className="flex items-center gap-2">
                       <DonationIcon size="sm" />
@@ -126,11 +130,12 @@ export default function AdminInventoryPage() {
                       <Button
                         className="!text-xs !px-3 !py-1.5"
                         onClick={() => handleAssign(item.id)}
+                        aria-label={`Asignar a beneficiario el inventario ${item.id}, ${item.tipo}`}
                       >
                         Asignar a beneficiario
                       </Button>
                     ) : (
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-gray-600">
                         {item.estado === "Entregado" ? "Completado" : "Ya asignado"}
                       </span>
                     )}

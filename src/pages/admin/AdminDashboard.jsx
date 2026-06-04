@@ -3,24 +3,15 @@ import { Link, useNavigate } from "react-router-dom";
 import { Package, Clock, Truck, CheckCircle, Bell, ArrowRight } from "lucide-react";
 
 import { useAdminNav } from "../../hooks/useAdminNav.jsx";
+import { usePageTitle } from "../../hooks/usePageTitle.js";
 import { donationService } from "../../services/api";
 import Sidebar from "../../components/modules/sidebar/Sidebar";
 import DashboardLayout from "../../components/modules/sidebar/DashboardLayout";
 import MetricCard from "../../components/ui/MetricCard";
 import StatusBadge from "../../components/ui/StatusBadge";
 import DonationIcon from "../../components/ui/DonationIcon";
-import FilterTabs from "../../components/ui/FilterTabs";
 import Button from "../../components/ui/Button";
 import PageHeader from "../../components/ui/PageHeader";
-
-const TABS = [
-  { key: "Todas", label: "Todas" },
-  { key: "Pendiente", label: "Pendiente" },
-  { key: "Recibido", label: "Recibido" },
-  { key: "Clasificado", label: "Clasificado" },
-  { key: "En tránsito", label: "En tránsito" },
-  { key: "Entregado", label: "Entregado" },
-];
 
 const MOCK_ACTIVITY = [
   { icon: <DonationIcon size="sm" />, msg: "Nueva donación registrada por Ana Jiménez (DON-005)", time: "Hace 3h" },
@@ -30,10 +21,10 @@ const MOCK_ACTIVITY = [
 ];
 
 export default function AdminDashboard() {
+  usePageTitle("Panel de administración");
   const navItems = useAdminNav();
   const navigate = useNavigate();
   const [donations, setDonations] = useState([]);
-  const [activeTab, setActiveTab] = useState("Todas");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -73,11 +64,6 @@ export default function AdminDashboard() {
     },
   ];
 
-  const filtered =
-    activeTab === "Todas"
-      ? donations
-      : donations.filter((d) => d.estado === activeTab);
-
   return (
     <DashboardLayout sidebar={<Sidebar navItems={navItems} />}>
       <PageHeader
@@ -85,12 +71,19 @@ export default function AdminDashboard() {
         subtitle={`Resumen de actividad del sistema · Hoy, ${new Date().toLocaleDateString("es-CR", { day: "numeric", month: "long", year: "numeric" })}`}
         action={
           <div className="flex items-center gap-3">
-            <Link to="/admin/notifications" className="relative">
+            <Link
+              to="/admin/notifications"
+              aria-label={`Ver notificaciones: ${unclassified} donaciones pendientes de clasificar`}
+              className="relative focus:outline-none focus:ring-2 focus:ring-primary-400 rounded-xl"
+            >
               <div className="w-10 h-10 border border-gray-200 rounded-xl flex items-center justify-center hover:bg-gray-50 transition">
-                <Bell className="w-4 h-4 text-gray-600" />
+                <Bell aria-hidden="true" className="w-4 h-4 text-gray-600" />
               </div>
               {unclassified > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center"
+                >
                   {unclassified}
                 </span>
               )}
@@ -114,38 +107,37 @@ export default function AdminDashboard() {
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-gray-900">Donaciones recientes</h2>
-            <Link to="/admin/donations" className="text-sm text-primary-600 hover:underline flex items-center gap-1">
-              Ver todas <ArrowRight className="w-3.5 h-3.5" />
+            <Link
+              to="/admin/donations"
+              aria-label="Ver todas las donaciones recientes"
+              className="text-sm text-primary-600 hover:underline flex items-center gap-1"
+            >
+              Ver todas <ArrowRight aria-hidden="true" className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="mb-4">
-            <FilterTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
-          </div>
-
           {loading ? (
-            <p className="text-sm text-gray-400 text-center py-6">Cargando...</p>
-          ) : filtered.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">Sin donaciones en esta categoría.</p>
+            <p role="status" className="text-sm text-gray-600 text-center py-6">Cargando...</p>
           ) : (
-            <div className="flex flex-col divide-y divide-gray-50">
-              {filtered.map((d) => (
-                <div key={d.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+            <div className="flex flex-col gap-2">
+              {donations.map((d) => (
+                <div key={d.id} className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition border border-transparent hover:border-gray-100">
                   <DonationIcon size="sm" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium text-gray-800 truncate">{d.tipoDonacion}</p>
-                      <span className="text-xs text-gray-400 font-mono">{d.id}</span>
+                      <span className="text-xs text-gray-600 font-mono">{d.id}</span>
                     </div>
-                    <p className="text-xs text-gray-400">{d.donante} · {d.fecha}</p>
+                    <p className="text-xs text-gray-600">{d.donante} · {d.fecha}</p>
                   </div>
                   <StatusBadge status={d.estado} />
                   <Button
                     variant="secondary"
                     className="!text-xs !px-3 !py-1.5"
                     onClick={() => navigate("/admin/donations")}
+                    aria-label={`Gestionar donación ${d.id}, ${d.tipoDonacion}`}
                   >
-                    Gestionar
+                    Gestionar donación
                   </Button>
                 </div>
               ))}
@@ -156,15 +148,15 @@ export default function AdminDashboard() {
         {/* Recent activity */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <h2 className="font-bold text-gray-900 flex items-center gap-2 mb-4">
-            <span>⚡</span> Actividad reciente
+            <span aria-hidden="true">⚡</span> Actividad reciente
           </h2>
           <div className="flex flex-col gap-4">
             {MOCK_ACTIVITY.map((a, i) => (
               <div key={i} className="flex items-start gap-3">
-                {a.icon}
+                <span aria-hidden="true">{a.icon}</span>
                 <div>
                   <p className="text-sm text-gray-700">{a.msg}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{a.time}</p>
+                  <p className="text-xs text-gray-600 mt-0.5">{a.time}</p>
                 </div>
               </div>
             ))}

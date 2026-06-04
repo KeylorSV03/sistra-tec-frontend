@@ -6,6 +6,7 @@ import { ArrowLeft, ShieldCheck, UserPlus, Eye, EyeOff } from "lucide-react";
 import { toast } from "react-toastify";
 
 import { useAdminNav } from "../../hooks/useAdminNav.jsx";
+import { usePageTitle } from "../../hooks/usePageTitle.js";
 import { createTransporterSchema } from "../../schemas/createTransporterSchema";
 import { transporterService } from "../../services/api";
 import Sidebar from "../../components/modules/sidebar/Sidebar";
@@ -14,6 +15,7 @@ import InputField from "../../components/ui/InputField";
 import Button from "../../components/ui/Button";
 
 export default function CreateTransporterPage() {
+  usePageTitle("Crear transportista");
   const navItems = useAdminNav();
   const navigate = useNavigate();
   const [showPass, setShowPass] = useState(false);
@@ -43,10 +45,12 @@ export default function CreateTransporterPage() {
       {/* Page header */}
       <div className="flex items-center gap-3 mb-6">
         <button
+          type="button"
           onClick={() => navigate(-1)}
+          aria-label="Volver a la pagina anterior"
           className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition"
         >
-          <ArrowLeft className="w-4 h-4 text-gray-600" />
+          <ArrowLeft aria-hidden="true" className="w-4 h-4 text-gray-600" />
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Crear cuenta de transportista</h1>
@@ -57,7 +61,7 @@ export default function CreateTransporterPage() {
       <div className="max-w-2xl flex flex-col gap-5">
         {/* Info banner */}
         <div className="bg-primary-50 border border-primary-100 rounded-2xl p-5 flex items-start gap-3">
-          <ShieldCheck className="w-5 h-5 text-primary-600 mt-0.5 shrink-0" />
+          <ShieldCheck aria-hidden="true" className="w-5 h-5 text-primary-600 mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-primary-700">
               Creación exclusiva para administradores
@@ -75,11 +79,11 @@ export default function CreateTransporterPage() {
           {/* Card header */}
           <div className="flex items-center gap-3 mb-6 pb-5 border-b border-gray-100">
             <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center">
-              <UserPlus className="w-5 h-5 text-primary-500" />
+              <UserPlus aria-hidden="true" className="w-5 h-5 text-primary-500" />
             </div>
             <div>
               <p className="font-semibold text-gray-900">Datos del transportista</p>
-              <p className="text-xs text-gray-400">Todos los campos son requeridos</p>
+              <p className="text-xs text-gray-600">Todos los campos son requeridos</p>
             </div>
           </div>
 
@@ -119,9 +123,15 @@ export default function CreateTransporterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPass((p) => !p)}
-                  className="text-gray-400 hover:text-gray-600"
+                  aria-label={showPass ? "Ocultar contraseña temporal" : "Mostrar contraseña temporal"}
+                  aria-pressed={showPass}
+                  className="inline-flex w-6 h-6 items-center justify-center text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-400 rounded"
                 >
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPass ? (
+                    <EyeOff aria-hidden="true" className="w-4 h-4" />
+                  ) : (
+                    <Eye aria-hidden="true" className="w-4 h-4" />
+                  )}
                 </button>
               }
               {...register("password")}
@@ -129,7 +139,7 @@ export default function CreateTransporterPage() {
 
             <div className="flex gap-3 pt-2">
               <Button type="submit" loading={loading} className="flex-1">
-                <UserPlus className="w-4 h-4" /> Crear transportista
+                <UserPlus aria-hidden="true" className="w-4 h-4" /> Crear transportista
               </Button>
               <Button
                 type="button"

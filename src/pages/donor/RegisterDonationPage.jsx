@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "react-toastify";
 
 import { useDonorNav } from "../../hooks/useDonorNav.jsx";
+import { usePageTitle } from "../../hooks/usePageTitle.js";
 import { donationSchema } from "../../schemas/donationSchema";
 import { donationService } from "../../services/api";
 import Sidebar from "../../components/modules/sidebar/Sidebar";
@@ -35,6 +36,7 @@ const UNIDAD_OPTIONS = [
 ];
 
 export default function RegisterDonationPage() {
+  usePageTitle("Registrar donación");
   const navigate = useNavigate();
   const navItems = useDonorNav();
   const [loading, setLoading] = useState(false);
@@ -71,10 +73,12 @@ export default function RegisterDonationPage() {
       {/* Page header */}
       <div className="flex items-center gap-3 mb-6">
         <button
+          type="button"
           onClick={() => navigate(-1)}
+          aria-label="Volver a la pagina anterior"
           className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition"
         >
-          <ArrowLeft className="w-4 h-4 text-gray-600" />
+          <ArrowLeft aria-hidden="true" className="w-4 h-4 text-gray-600" />
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Registrar nueva donación</h1>
@@ -111,12 +115,15 @@ export default function RegisterDonationPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-800">
+              <label htmlFor="descripcion" className="text-sm font-medium text-gray-800">
                 Descripción de los artículos
               </label>
               <textarea
+                id="descripcion"
                 rows={4}
                 maxLength={500}
+                aria-invalid={errors.descripcion ? "true" : undefined}
+                aria-describedby={errors.descripcion ? "descripcion-error" : "descripcion-help descripcion-count"}
                 placeholder="Ej: Arroz en sacos de 5kg, sellados de fábrica, vencen en 2026. Frijoles negros..."
                 className={`w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition resize-none ${
                   errors.descripcion ? "border-red-400" : ""
@@ -126,26 +133,28 @@ export default function RegisterDonationPage() {
                 })}
               />
               <div className="flex justify-between">
-                <p className="text-xs text-gray-400">
+                <p id="descripcion-help" className="text-xs text-gray-600">
                   Mientras más detalle, más rápido podemos clasificar y enviar tu donación.
                 </p>
-                <span className="text-xs text-gray-400">{charCount} / 500</span>
+                <span id="descripcion-count" className="text-xs text-gray-600">{charCount} / 500</span>
               </div>
               {errors.descripcion && (
-                <p className="text-xs text-red-500">{errors.descripcion.message}</p>
+                <p id="descripcion-error" role="alert" className="text-xs text-red-600">
+                  {errors.descripcion.message}
+                </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-800">
+              <label id="foto-label" className="text-sm font-medium text-gray-800">
                 Foto de los artículos{" "}
-                <span className="text-gray-400 font-normal">(opcional)</span>
+                <span className="text-gray-600 font-normal">(opcional)</span>
               </label>
               <Controller
                 name="foto"
                 control={control}
                 render={({ field }) => (
-                  <FileDropzone onChange={field.onChange} />
+                  <FileDropzone label="foto de los artículos" onChange={field.onChange} />
                 )}
               />
             </div>

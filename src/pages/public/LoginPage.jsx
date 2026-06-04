@@ -6,6 +6,7 @@ import { Eye, EyeOff, Info } from "lucide-react";
 import { toast } from "react-toastify";
 
 import { useAuth } from "../../hooks/useAuth";
+import { usePageTitle } from "../../hooks/usePageTitle";
 import { loginSchema } from "../../schemas/loginSchema";
 import AuthLayout from "../../components/modules/sidebar/AuthLayout";
 import InputField from "../../components/ui/InputField";
@@ -18,6 +19,7 @@ const ROLE_ROUTES = {
 };
 
 export default function LoginPage() {
+  usePageTitle("Iniciar sesión");
   const { loginUser } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -48,7 +50,7 @@ export default function LoginPage() {
         <h2 className="text-white text-3xl font-bold leading-snug">
           Conectando a quienes dan<br />con quienes más<br />necesitan.
         </h2>
-        <p className="text-gray-400 text-sm mt-4 leading-relaxed">
+        <p className="text-gray-300 text-sm mt-4 leading-relaxed">
           Seguimiento transparente y en tiempo real de cada donación ante emergencias naturales en Costa Rica.
         </p>
       </div>
@@ -59,7 +61,7 @@ export default function LoginPage() {
           { label: "Transportistas activos", value: "34" },
         ].map((s) => (
           <div key={s.label} className="flex items-center justify-between bg-dark-800 rounded-xl px-4 py-3">
-            <span className="text-gray-400 text-sm">{s.label}</span>
+            <span className="text-gray-300 text-sm">{s.label}</span>
             <span className="text-white font-bold">{s.value}</span>
           </div>
         ))}
@@ -73,7 +75,7 @@ export default function LoginPage() {
       <p className="text-gray-500 text-sm mt-1 mb-6">Ingresá con tu cuenta para continuar</p>
 
       <div className="bg-primary-50 border border-primary-100 rounded-xl p-4 mb-6 flex items-start gap-3">
-        <Info className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
+        <Info aria-hidden="true" className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
         <div>
           <p className="text-sm font-semibold text-primary-700 mb-2">Acceso rápido al prototipo:</p>
           <div className="flex gap-2 flex-wrap">
@@ -101,14 +103,30 @@ export default function LoginPage() {
             placeholder="••••••••"
             error={errors.password?.message}
             rightSlot={
-              <button type="button" onClick={() => setShowPassword((p) => !p)} className="text-gray-400 hover:text-gray-600">
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <button
+                type="button"
+                onClick={() => setShowPassword((p) => !p)}
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-pressed={showPassword}
+                className="inline-flex w-6 h-6 items-center justify-center text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-400 rounded"
+              >
+                {showPassword ? (
+                  <EyeOff aria-hidden="true" className="w-4 h-4" />
+                ) : (
+                  <Eye aria-hidden="true" className="w-4 h-4" />
+                )}
               </button>
             }
             {...register("password")}
           />
           <div className="text-right mt-1">
-            <a href="#" className="text-xs text-primary-600 hover:underline">¿Olvidaste tu contraseña?</a>
+            <button
+              type="button"
+              onClick={() => toast.info("La recuperacion de contraseña estara disponible proximamente.")}
+              className="text-xs text-primary-600 hover:underline focus:outline-none focus:ring-2 focus:ring-primary-400 rounded"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
           </div>
         </div>
         <Button type="submit" loading={loading} className="w-full">Iniciar sesión</Button>

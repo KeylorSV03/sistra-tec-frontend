@@ -1,15 +1,17 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, UserPlus, Mail, Phone } from "lucide-react";
+import { toast } from "react-toastify";
 
 import { useAdminNav } from "../../hooks/useAdminNav.jsx";
+import { usePageTitle } from "../../hooks/usePageTitle.js";
 import { transporterService } from "../../services/api";
 import Sidebar from "../../components/modules/sidebar/Sidebar";
 import DashboardLayout from "../../components/modules/sidebar/DashboardLayout";
 import PageHeader from "../../components/ui/PageHeader";
 import Button from "../../components/ui/Button";
 
-function Avatar({ name, color = "bg-primary-500" }) {
+function Avatar({ name, color = "bg-primary-600" }) {
   const initials = name
     ?.split(" ")
     .slice(0, 2)
@@ -17,21 +19,22 @@ function Avatar({ name, color = "bg-primary-500" }) {
     .join("")
     .toUpperCase();
   return (
-    <div className={`w-9 h-9 ${color} rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0`}>
+    <div role="img" aria-label={`Avatar de ${name}`} className={`w-9 h-9 ${color} rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0`}>
       {initials}
     </div>
   );
 }
 
 const AVATAR_COLORS = [
-  "bg-primary-500",
-  "bg-purple-500",
-  "bg-teal-500",
-  "bg-rose-500",
-  "bg-amber-500",
+  "bg-primary-600",
+  "bg-purple-700",
+  "bg-teal-700",
+  "bg-rose-700",
+  "bg-amber-700",
 ];
 
 export default function AdminTransportersPage() {
+  usePageTitle("Transportistas");
   const navItems = useAdminNav();
   const navigate = useNavigate();
   const [transporters, setTransporters] = useState([]);
@@ -66,7 +69,7 @@ export default function AdminTransportersPage() {
         subtitle={`${active} transportistas activos`}
         action={
           <Button onClick={() => navigate("/admin/create-transporter")}>
-            <UserPlus className="w-4 h-4" /> Crear transportista
+            <UserPlus aria-hidden="true" className="w-4 h-4" /> Crear transportista
           </Button>
         }
       />
@@ -88,9 +91,10 @@ export default function AdminTransportersPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div className="mb-5">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
+              aria-label="Buscar transportista por nombre o correo"
               placeholder="Buscar transportista por nombre o correo..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -100,14 +104,15 @@ export default function AdminTransportersPage() {
         </div>
 
         {loading ? (
-          <p className="text-sm text-gray-400 text-center py-10">Cargando...</p>
+          <p role="status" className="text-sm text-gray-600 text-center py-10">Cargando...</p>
         ) : (
           <table className="w-full text-sm">
+            <caption className="sr-only">Listado de transportistas registrados</caption>
             <thead>
-              <tr className="text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100">
-                {["Transportista", "Correo", "Teléfono", "Asignaciones activas", "Estado", "Acción"].map(
-                  (h) => <th key={h} className="text-left pb-3 font-medium">{h}</th>
-                )}
+              <tr className="text-xs text-gray-600 uppercase tracking-wider border-b border-gray-100">
+                {["Transportista", "Correo", "Teléfono", "Vehículo", "Viajes", "Estado", ""].map((h) => (
+                  <th key={h} scope="col" className="text-left pb-3 font-medium">{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -118,40 +123,46 @@ export default function AdminTransportersPage() {
                       <Avatar name={t.nombre} color={AVATAR_COLORS[i % AVATAR_COLORS.length]} />
                       <div>
                         <p className="font-medium text-gray-800">{t.nombre}</p>
-                        <p className="text-xs text-gray-400">{t.id}</p>
+                        <p className="text-xs text-gray-600">{t.id}</p>
                       </div>
                     </div>
                   </td>
                   <td className="py-4 text-gray-600">
                     <div className="flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-gray-400" />
+                      <Mail aria-hidden="true" className="w-3.5 h-3.5 text-gray-400" />
                       {t.correo}
                     </div>
                   </td>
                   <td className="py-4 text-gray-600">
                     <div className="flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-gray-400" />
+                      <Phone aria-hidden="true" className="w-3.5 h-3.5 text-gray-400" />
                       {t.telefono}
                     </div>
                   </td>
                   <td className="py-4">
                     <div className="flex items-center gap-2">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${(t.asignacionesActivas ?? 0) > 0 ? "bg-orange-100 text-orange-700" : "bg-gray-100 text-gray-500"}`}>
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${(t.asignacionesActivas ?? 0) > 0 ? "bg-orange-100 text-orange-800" : "bg-gray-100 text-gray-700"}`}>
                         {t.asignacionesActivas ?? 0}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-gray-600">
                         {(t.asignacionesActivas ?? 0) > 0 ? "en curso" : "Sin asignaciones"}
                       </span>
                     </div>
                   </td>
                   <td className="py-4">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${t.estado === "Activo" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${t.estado === "Activo" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-700"}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${t.estado === "Activo" ? "bg-green-500" : "bg-gray-400"}`} />
                       {t.estado}
                     </span>
                   </td>
                   <td className="py-4">
-                    <Button variant="secondary" className="!text-xs !px-3 !py-1.5">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="!text-xs !px-3 !py-1.5"
+                      onClick={() => toast.info(`Asignaciones de ${t.nombre} disponibles próximamente.`)}
+                      aria-label={`Ver asignaciones de ${t.nombre}`}
+                    >
                       Ver asignaciones
                     </Button>
                   </td>

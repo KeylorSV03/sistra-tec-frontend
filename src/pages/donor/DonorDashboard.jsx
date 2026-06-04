@@ -4,6 +4,7 @@ import { Package, Truck, CheckCircle, Clock, Plus, ArrowRight } from "lucide-rea
 
 import { useAuth } from "../../hooks/useAuth";
 import { useDonorNav } from "../../hooks/useDonorNav.jsx";
+import { usePageTitle } from "../../hooks/usePageTitle.js";
 import { donationService } from "../../services/api";
 import Sidebar from "../../components/modules/sidebar/Sidebar";
 import DashboardLayout from "../../components/modules/sidebar/DashboardLayout";
@@ -14,6 +15,7 @@ import Button from "../../components/ui/Button";
 import PageHeader from "../../components/ui/PageHeader";
 
 export default function DonorDashboard() {
+  usePageTitle("Mi panel");
   const { user } = useAuth();
   const navItems = useDonorNav();
   const navigate = useNavigate();
@@ -60,37 +62,27 @@ export default function DonorDashboard() {
   return (
     <DashboardLayout sidebar={<Sidebar navItems={navItems} />}>
       <PageHeader
-        title={`¡Hola, ${firstName}! 👋`}
+        title={<>¡Hola, {firstName}! <span aria-hidden="true">👋</span></>}
         subtitle="Aquí encontrás el resumen de tus donaciones. Gracias por tu generosidad."
         action={
           <Button onClick={() => navigate("/donor/register-donation")}>
-            <Plus className="w-4 h-4" />
-            Registrar nueva donación
+            <Plus aria-hidden="true" className="w-4 h-4" />
+            Registrar donación
           </Button>
         }
       />
 
-      {/* Metric cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {metrics.map((m) => (
-          <MetricCard key={m.label} {...m} />
-        ))}
-      </div>
-
-      {/* CTA Banner */}
-      <div className="rounded-2xl bg-gradient-to-r from-primary-600 to-purple-600 p-6 flex items-center justify-between mb-6">
+      <div className="bg-gradient-to-r from-primary-600 to-purple-600 rounded-2xl p-6 shadow-sm mb-8 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div>
-          <h3 className="text-white font-bold text-lg">¿Tenés algo para donar?</h3>
-          <p className="text-primary-100 text-sm mt-1">
-            Registrá tu donación en menos de 2 minutos y seguí su progreso en tiempo real.
-          </p>
+          <h2 className="text-white font-bold text-xl mb-1">¡Gracias por ayudar!</h2>
+          <p className="text-white text-sm mt-1">Con tu aporte hacemos la diferencia. Registra más artículos cuando lo desees.</p>
         </div>
         <Button
           variant="secondary"
           onClick={() => navigate("/donor/register-donation")}
           className="shrink-0 !text-primary-600"
         >
-          Registrar ahora <ArrowRight className="w-4 h-4" />
+          Registrar ahora <ArrowRight aria-hidden="true" className="w-4 h-4" />
         </Button>
       </div>
 
@@ -100,16 +92,17 @@ export default function DonorDashboard() {
           <h2 className="font-bold text-gray-900 text-lg">Donaciones recientes</h2>
           <Link
             to="/donor/my-donations"
+            aria-label="Ver todas mis donaciones"
             className="text-sm text-primary-600 hover:underline flex items-center gap-1"
           >
-            Ver todas <ArrowRight className="w-3.5 h-3.5" />
+            Ver todas <ArrowRight aria-hidden="true" className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         {loading ? (
-          <p className="text-sm text-gray-400 text-center py-6">Cargando...</p>
+          <p role="status" className="text-sm text-gray-600 text-center py-6">Cargando...</p>
         ) : donations.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">
+          <p className="text-sm text-gray-600 text-center py-6">
             Aún no tenés donaciones registradas.
           </p>
         ) : (
@@ -124,13 +117,14 @@ export default function DonorDashboard() {
                   <p className="text-sm font-medium text-gray-800 truncate">
                     {d.tipoDonacion}
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-600">
                     {d.cantidad} {d.unidadMedida} · {d.fecha}
                   </p>
                 </div>
                 <StatusBadge status={d.estado} />
                 <Link
                   to={`/donor/my-donations`}
+                  aria-label={`Ver detalle de donación ${d.id}, ${d.tipoDonacion}`}
                   className="text-xs text-primary-600 hover:underline shrink-0"
                 >
                   Ver detalle

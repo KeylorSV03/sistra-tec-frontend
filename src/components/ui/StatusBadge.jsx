@@ -13,9 +13,10 @@ export default function StatusBadge({ status }) {
 
   return (
     <span
+      aria-label={`Estado: ${config.label}`}
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.badge}`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
+      <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
       {config.label}
     </span>
   );

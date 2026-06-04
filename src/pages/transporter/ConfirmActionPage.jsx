@@ -4,6 +4,7 @@ import { ArrowLeft, Truck, CheckCircle, MapPin, CalendarDays } from "lucide-reac
 import { toast } from "react-toastify";
 
 import { useTransporterNav } from "../../hooks/useTransporterNav.jsx";
+import { usePageTitle } from "../../hooks/usePageTitle.js";
 import { transporterService } from "../../services/api";
 import Sidebar from "../../components/modules/sidebar/Sidebar";
 import DashboardLayout from "../../components/modules/sidebar/DashboardLayout";
@@ -11,6 +12,7 @@ import StatusBadge from "../../components/ui/StatusBadge";
 import DonationIcon from "../../components/ui/DonationIcon";
 
 export default function ConfirmActionPage() {
+  usePageTitle("Confirmar acción");
   const navItems = useTransporterNav();
   const navigate = useNavigate();
   const [assignments, setAssignments] = useState([]);
@@ -62,10 +64,12 @@ export default function ConfirmActionPage() {
     <DashboardLayout sidebar={<Sidebar navItems={navItems} />}>
       <div className="flex items-center gap-3 mb-6">
         <button
+          type="button"
           onClick={() => navigate(-1)}
+          aria-label="Volver a la pagina anterior"
           className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition"
         >
-          <ArrowLeft className="w-4 h-4 text-gray-600" />
+          <ArrowLeft aria-hidden="true" className="w-4 h-4 text-gray-600" />
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Confirmación de acción</h1>
@@ -75,9 +79,9 @@ export default function ConfirmActionPage() {
 
       <div className="max-w-2xl">
         {loading ? (
-          <p className="text-sm text-gray-400 text-center py-10">Cargando...</p>
+          <p role="status" className="text-sm text-gray-600 text-center py-10">Cargando...</p>
         ) : assignments.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-10">Sin asignaciones activas.</p>
+          <p className="text-sm text-gray-600 text-center py-10">Sin asignaciones activas.</p>
         ) : (
           <>
             {/* Assignment selector if multiple */}
@@ -87,8 +91,10 @@ export default function ConfirmActionPage() {
                 <div className="flex flex-col gap-2">
                   {assignments.map((a) => (
                     <button
+                      type="button"
                       key={a.id}
                       onClick={() => setSelected(a)}
+                      aria-pressed={selected?.id === a.id}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition ${
                         selected?.id === a.id
                           ? "border-primary-400 bg-primary-50"
@@ -98,7 +104,7 @@ export default function ConfirmActionPage() {
                       <DonationIcon size="sm" />
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-800">{a.tipoDonacion}</p>
-                        <p className="text-xs text-gray-400">{a.donacionId}</p>
+                        <p className="text-xs text-gray-600">{a.donacionId}</p>
                       </div>
                       <StatusBadge status={a.estado} />
                     </button>
@@ -121,22 +127,22 @@ export default function ConfirmActionPage() {
                         <StatusBadge status={selected.estado} />
                       </div>
                       <p className="text-sm text-gray-500 mt-0.5">{selected.cantidad} {selected.unidad}</p>
-                      <p className="text-sm text-gray-400 mt-0.5">{selected.descripcion}</p>
+                      <p className="text-sm text-gray-600 mt-0.5">{selected.descripcion}</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                      <MapPin aria-hidden="true" className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                       <div>
-                        <p className="text-xs text-gray-400 mb-0.5">Dirección de recogida</p>
+                        <p className="text-xs text-gray-600 mb-0.5">Dirección de recogida</p>
                         <p className="text-sm text-gray-700">{selected.direccionRecogida}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
-                      <CalendarDays className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                      <CalendarDays aria-hidden="true" className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                       <div>
-                        <p className="text-xs text-gray-400 mb-0.5">Destinatario</p>
+                        <p className="text-xs text-gray-600 mb-0.5">Destinatario</p>
                         <p className="text-sm text-gray-700">{selected.destino}</p>
                       </div>
                     </div>
@@ -146,35 +152,39 @@ export default function ConfirmActionPage() {
                 {/* Action cards */}
                 <div className="grid grid-cols-2 gap-4">
                   <button
+                    type="button"
                     onClick={handlePickup}
                     disabled={!!confirming || selected.estado === "Entregado"}
-                    className="bg-orange-200 hover:bg-orange-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl p-6 text-left transition"
+                    aria-busy={confirming === "pickup" ? "true" : undefined}
+                    className="bg-orange-700 hover:bg-orange-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl p-6 text-left transition"
                   >
                     <div className="mb-3">
                       {confirming === "pickup" ? (
-                        <span className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin inline-block" />
+                        <span aria-hidden="true" className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin inline-block" />
                       ) : (
-                        <Truck className="w-6 h-6 text-orange-600" />
+                        <Truck aria-hidden="true" className="w-6 h-6 text-white" />
                       )}
                     </div>
-                    <p className="font-semibold text-orange-700 text-base">Confirmar recogida</p>
-                    <p className="text-sm text-orange-600 mt-1">Marca la donación como "En tránsito"</p>
+                    <p className="font-semibold text-white text-base">Confirmar recogida</p>
+                    <p className="text-sm text-orange-50 mt-1">Marca la donación como "En tránsito"</p>
                   </button>
 
                   <button
+                    type="button"
                     onClick={handleDelivery}
                     disabled={!!confirming || selected.estado === "Entregado"}
-                    className="bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl p-6 text-left transition"
+                    aria-busy={confirming === "delivery" ? "true" : undefined}
+                    className="bg-green-700 hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl p-6 text-left transition"
                   >
                     <div className="mb-3">
                       {confirming === "delivery" ? (
-                        <span className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />
+                        <span aria-hidden="true" className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />
                       ) : (
-                        <CheckCircle className="w-6 h-6 text-white" />
+                        <CheckCircle aria-hidden="true" className="w-6 h-6 text-white" />
                       )}
                     </div>
                     <p className="font-semibold text-white text-base">Confirmar entrega</p>
-                    <p className="text-sm text-green-100 mt-1">Marca la donación como "Entregado"</p>
+                    <p className="text-sm text-green-50 mt-1">Marca la donación como "Entregado"</p>
                   </button>
                 </div>
               </>

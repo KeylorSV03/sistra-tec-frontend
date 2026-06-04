@@ -13,9 +13,10 @@ export default function DonationIcon({ size = "md" }) {
 
   return (
     <div
+      aria-hidden="true"
       className={`${sizes[size]} bg-primary-50 rounded-xl flex items-center justify-center shrink-0`}
     >
-      <Package className={`${iconSizes[size]} text-primary-500`} />
+      <Package aria-hidden="true" className={`${iconSizes[size]} text-primary-500`} />
     </div>
   );
 }

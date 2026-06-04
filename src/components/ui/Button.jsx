@@ -25,10 +25,14 @@ export default function Button({
     <button
       className={`${base} ${variants[variant]} ${className}`}
       disabled={loading || props.disabled}
+      aria-busy={loading ? "true" : undefined}
       {...props}
     >
       {loading ? (
-        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        <span
+          aria-hidden="true"
+          className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+        />
       ) : null}
       {children}
     </button>

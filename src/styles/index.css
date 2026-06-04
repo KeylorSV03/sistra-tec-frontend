@@ -25,3 +25,14 @@
     --color-status-received: #3b82f6;
     --color-status-pending: #9ca3af;
 }
+
+@layer base {
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+        outline: 2px solid var(--color-primary-600);
+        outline-offset: 2px;
+    }
+}

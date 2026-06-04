@@ -1,3 +1,5 @@
+import { cloneElement, isValidElement } from "react";
+
 /**
  * Dashboard metric card with icon, value, label, and optional trend/badge.
  */
@@ -10,8 +12,14 @@ export default function MetricCard({
   alert = false,
   className = "",
 }) {
+  const accessibleSummary = `${label}: ${value}${trendLabel ? `. ${trendLabel}` : ""}`;
+  const decorativeIcon = isValidElement(icon)
+    ? cloneElement(icon, { "aria-hidden": "true" })
+    : icon;
+
   return (
-    <div
+    <section
+      aria-label={accessibleSummary}
       className={`bg-white rounded-2xl p-5 shadow-sm border ${
         alert ? "border-yellow-300" : "border-gray-100"
       } flex flex-col gap-3 ${className}`}
@@ -22,10 +30,11 @@ export default function MetricCard({
             alert ? "bg-yellow-50" : "bg-primary-50"
           }`}
         >
-          {icon}
+          {decorativeIcon}
         </div>
         {trendLabel && (
           <span
+            aria-hidden="true"
             className={`text-xs font-medium px-2 py-0.5 rounded-full ${
               alert
                 ? "bg-yellow-50 text-yellow-700"
@@ -41,6 +50,6 @@ export default function MetricCard({
         <p className="text-2xl font-bold text-gray-900">{value}</p>
         <p className="text-sm text-gray-500 mt-0.5">{label}</p>
       </div>
-    </div>
+    </section>
   );
 }

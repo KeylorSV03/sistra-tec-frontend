@@ -6,12 +6,14 @@ import { Eye, EyeOff, Lock } from "lucide-react";
 import { toast } from "react-toastify";
 
 import { authService } from "../../services/api";
+import { usePageTitle } from "../../hooks/usePageTitle";
 import { registerDonorSchema } from "../../schemas/registerDonorSchema";
 import AuthLayout from "../../components/modules/sidebar/AuthLayout";
 import InputField from "../../components/ui/InputField";
 import Button from "../../components/ui/Button";
 
 export default function RegisterPage() {
+  usePageTitle("Registrarse");
   const navigate = useNavigate();
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -46,7 +48,7 @@ export default function RegisterPage() {
         <h2 className="text-white text-4xl font-bold leading-tight">
           Registrate como donante y empezá a marcar la diferencia.
         </h2>
-        <p className="text-gray-400 text-sm mt-4 leading-relaxed">
+        <p className="text-gray-300 text-sm mt-4 leading-relaxed">
           Solo donantes pueden crear cuentas directamente. Las cuentas de
           transportistas son creadas por el equipo administrador.
         </p>
@@ -54,7 +56,7 @@ export default function RegisterPage() {
 
       <div className="bg-dark-700 rounded-2xl p-5">
         <p className="text-gray-300 text-sm">
-          <span className="mr-1">🔒</span>
+          <span className="mr-1" aria-hidden="true">🔒</span>
           <strong className="text-white">Tus datos están seguros.</strong> Solo
           usamos tu información para identificar tus donaciones y enviarte
           actualizaciones de estado.
@@ -98,9 +100,15 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => setShowPass((p) => !p)}
-              className="text-gray-400 hover:text-gray-600"
+              aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+              aria-pressed={showPass}
+              className="inline-flex w-6 h-6 items-center justify-center text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-400 rounded"
             >
-              {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPass ? (
+                <EyeOff aria-hidden="true" className="w-4 h-4" />
+              ) : (
+                <Eye aria-hidden="true" className="w-4 h-4" />
+              )}
             </button>
           }
           {...register("password")}
@@ -116,9 +124,15 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => setShowConfirm((p) => !p)}
-              className="text-gray-400 hover:text-gray-600"
+              aria-label={showConfirm ? "Ocultar confirmacion de contraseña" : "Mostrar confirmacion de contraseña"}
+              aria-pressed={showConfirm}
+              className="inline-flex w-6 h-6 items-center justify-center text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-400 rounded"
             >
-              {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showConfirm ? (
+                <EyeOff aria-hidden="true" className="w-4 h-4" />
+              ) : (
+                <Eye aria-hidden="true" className="w-4 h-4" />
+              )}
             </button>
           }
           {...register("confirmPassword")}
@@ -129,22 +143,19 @@ export default function RegisterPage() {
           <label className="flex items-center justify-center gap-2 text-sm text-gray-600 cursor-pointer">
             <input
               type="checkbox"
+              aria-invalid={errors.terminos ? "true" : undefined}
+              aria-describedby={errors.terminos ? "terminos-error" : undefined}
               className="w-4 h-4 accent-primary-600"
               {...register("terminos")}
             />
             <span>
-              Acepto los{" "}
-              <a href="#" className="text-primary-600 underline">
-                términos de uso
-              </a>{" "}
-              y la{" "}
-              <a href="#" className="text-primary-600 underline">
-                política de privacidad
-              </a>
+              Acepto los terminos de uso y la politica de privacidad
             </span>
           </label>
           {errors.terminos && (
-            <p className="text-xs text-red-500 mt-1">{errors.terminos.message}</p>
+            <p id="terminos-error" role="alert" className="text-xs text-red-600 mt-1">
+              {errors.terminos.message}
+            </p>
           )}
         </div>
 
