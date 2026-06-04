@@ -70,6 +70,7 @@ export default function NotificationsPage({ sidebar, role }) {
       setNotifications((prev) => prev.map((n) => ({ ...n, leido: true })));
       setAnnouncement("Todas las notificaciones fueron marcadas como leídas.");
       toast.success("Todas las notificaciones fueron marcadas como leídas.");
+      window.dispatchEvent(new Event("sistra:notifications-changed"));
     } catch {
       toast.error("Error al marcar notificaciones");
     }

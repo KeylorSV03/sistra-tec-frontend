@@ -36,7 +36,7 @@ export default function ConfirmActionPage() {
     if (!selected) return;
     setConfirming("pickup");
     try {
-      await transporterService.confirmarRecogida(selected.id);
+      await transporterService.confirmarRecogida(selected.apiId ?? selected.id);
       toast.success(`Recogida confirmada para ${selected.tipoDonacion}`);
       navigate("/transporter/dashboard");
     } catch (err) {
@@ -50,7 +50,7 @@ export default function ConfirmActionPage() {
     if (!selected) return;
     setConfirming("delivery");
     try {
-      await transporterService.confirmarEntrega(selected.id);
+      await transporterService.confirmarEntrega(selected.apiId ?? selected.id);
       toast.success(`¡Entrega confirmada! ¡Buen trabajo!`);
       navigate("/transporter/dashboard");
     } catch (err) {
@@ -166,7 +166,7 @@ export default function ConfirmActionPage() {
                       )}
                     </div>
                     <p className="font-semibold text-white text-base">Confirmar recogida</p>
-                    <p className="text-sm text-orange-50 mt-1">Marca la donación como "En tránsito"</p>
+                    <p className="text-sm text-orange-50 mt-1">Marca la donación como "Recibido"</p>
                   </button>
 
                   <button

@@ -13,5 +13,7 @@ export const donationSchema = z.object({
     .string()
     .min(10, "La descripción debe tener al menos 10 caracteres")
     .max(500),
-  foto: z.any().optional(),
+  foto: z.any().refine((file) => Boolean(file), {
+    message: "Seleccioná una imagen de los artículos",
+  }),
 });

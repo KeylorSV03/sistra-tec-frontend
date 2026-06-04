@@ -31,7 +31,7 @@ export default function TransporterDashboard() {
   }, []);
 
   const inTransit = assignments.filter((a) => a.estado === "En tránsito");
-  const pending = assignments.filter((a) => a.estado === "Pendiente");
+  const pending = assignments.filter((a) => !["En tránsito", "Entregado"].includes(a.estado));
   const delivered = assignments.filter((a) => a.estado === "Entregado");
 
   const firstName = user?.nombre?.split(" ")[0] ?? "Transportista";
