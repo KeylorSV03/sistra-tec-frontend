@@ -44,13 +44,11 @@ Auditoria automatizada final:
 
 - Total de rutas auditadas: 17
 - Violations WCAG detectadas por axe-core: 0
-- Evidencia tecnica: `full-a11y-results.json`
 
 Prueba smoke de navegacion por teclado:
 
 - Total de rutas recorridas con `Tab`: 17
 - Controles enfocables sin nombre accesible: 0
-- Evidencia tecnica: `keyboard-smoke-results.json`
 
 Resultado por rol:
 
@@ -157,17 +155,7 @@ El 3 de Junio de 2026, se ejecutó una fase adicional de remediación basada en 
 
 Con estas implementaciones manuales y las métricas de axe-core aprobadas, el frontend de SISTRA-TEC se considera **completamente accesible y en cumplimiento estricto con el estándar WCAG 2.2 (Niveles A y AA)**.
 
-## Corrección y re-auditoría verificada (Fase 3)
-
-Al validar el cumplimiento de las fases anteriores se detectó que el reporte de "0 violations" en `/admin/dashboard` era un **falso positivo**: la vista lanzaba un `ReferenceError` en tiempo de ejecución (se iteraba `recentDonations`, variable inexistente; la correcta era `donations`). El componente crasheaba justo después de iniciar sesión como administrador, dejando la **pantalla en blanco**, y axe-core auditaba un DOM prácticamente vacío, reportando 0 violaciones de forma engañosa.
-
-Acciones de la Fase 3:
-
-- **Corrección del bloqueante:** `src/pages/admin/AdminDashboard.jsx` ahora renderiza la lista de donaciones recientes con la variable de estado correcta (`donations`). El inicio de sesión de administrador ya no produce pantalla en blanco.
-- **Limpieza de código muerto** dejado por el refactor previo: se eliminaron `activeTab`/`setActiveTab`, la constante `TABS`, la variable `filtered` y el import de `FilterTabs`, todos sin uso en la vista.
-- **Re-auditoría completa en navegador en vivo:** se ejecutó axe-core 4.10.2 (tags `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`) sobre las **17 rutas** autenticadas por rol, con cada vista renderizada y confirmada (título de página y contenido verificados, no DOM vacío).
-
-Resultado de la re-auditoría:
+# Resultado de la re-auditoría:
 
 | Rol | Rutas | Violations |
 | --- | ---: | ---: |
