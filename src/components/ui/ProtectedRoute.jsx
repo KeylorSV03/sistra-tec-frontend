@@ -6,7 +6,7 @@ export default function ProtectedRoute({ role }) {
 
     if (loading) return null;
     if (!user) return <Navigate to="/login" replace />;
-    if (role && user.tipoUsuario !== role) return <Navigate to="/login" replace />;
+    if (role && user.rolId !== role) return <Navigate to="/login" replace />;
 
     return <Outlet />;
 }
