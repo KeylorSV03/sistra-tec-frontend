@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Info } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "react-toastify";
 
 import { useAuth } from "../../hooks/useAuth";
@@ -74,21 +74,7 @@ export default function LoginPage() {
       <h1 className="text-2xl font-bold text-gray-900">Iniciar sesión</h1>
       <p className="text-gray-500 text-sm mt-1 mb-6">Ingresá con tu cuenta para continuar</p>
 
-      <div className="bg-primary-50 border border-primary-100 rounded-xl p-4 mb-6 flex items-start gap-3">
-        <Info aria-hidden="true" className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
-        <div>
-          <p className="text-sm font-semibold text-primary-700 mb-2">Acceso rápido al prototipo:</p>
-          <div className="flex gap-2 flex-wrap">
-            {["Donante", "Admin", "Transportista"].map((r) => (
-              <span key={r} className="px-3 py-1 bg-primary-600 text-white text-xs rounded-full font-medium">
-                {r}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+<form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         <InputField
           label="Correo electrónico"
           type="email"
