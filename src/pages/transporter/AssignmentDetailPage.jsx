@@ -32,7 +32,10 @@ export default function AssignmentDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const canDeliver = assignment?.estado === "En tránsito";
+
   const confirmDelivery = async () => {
+    if (!canDeliver) return;
     setConfirming(true);
     try {
       await transporterService.confirmarEntrega(id);
@@ -151,10 +154,16 @@ export default function AssignmentDetailPage() {
                 className="w-full !bg-green-700 hover:!bg-green-800 mb-3"
                 onClick={confirmDelivery}
                 loading={confirming}
+                disabled={!canDeliver}
               >
                 <CheckCircle aria-hidden="true" className="w-4 h-4" />
                 Confirmar entrega
               </Button>
+              {!canDeliver && assignment.estado !== "Entregado" && (
+                <p className="text-xs text-gray-500 mb-3">
+                  Solo se puede confirmar la entrega cuando la donación está "En tránsito".
+                </p>
+              )}
               <Button
                 variant="secondary"
                 className="w-full"

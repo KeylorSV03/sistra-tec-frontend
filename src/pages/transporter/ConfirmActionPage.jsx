@@ -32,12 +32,17 @@ export default function ConfirmActionPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Recoger donde el donante y llevar al centro de acopio: Pendiente → Recibido
+  const canPickup = selected?.estado === "Pendiente";
+  // Llevar del centro de acopio al beneficiario: En tránsito → Entregado
+  const canDeliver = selected?.estado === "En tránsito";
+
   const handlePickup = async () => {
-    if (!selected) return;
+    if (!selected || !canPickup) return;
     setConfirming("pickup");
     try {
       await transporterService.confirmarRecogida(selected.id);
-      toast.success(`Recogida confirmada para ${selected.tipoDonacion}`);
+      toast.success(`Recogida confirmada: ${selected.tipoDonacion} llegó al centro de acopio`);
       navigate("/transporter/dashboard");
     } catch (err) {
       toast.error(err.message);
@@ -47,7 +52,7 @@ export default function ConfirmActionPage() {
   };
 
   const handleDelivery = async () => {
-    if (!selected) return;
+    if (!selected || !canDeliver) return;
     setConfirming("delivery");
     try {
       await transporterService.confirmarEntrega(selected.id);
@@ -154,7 +159,7 @@ export default function ConfirmActionPage() {
                   <button
                     type="button"
                     onClick={handlePickup}
-                    disabled={!!confirming || selected.estado === "Entregado"}
+                    disabled={!!confirming || !canPickup}
                     aria-busy={confirming === "pickup" ? "true" : undefined}
                     className="bg-orange-700 hover:bg-orange-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl p-6 text-left transition"
                   >
@@ -166,13 +171,13 @@ export default function ConfirmActionPage() {
                       )}
                     </div>
                     <p className="font-semibold text-white text-base">Confirmar recogida</p>
-                    <p className="text-sm text-orange-50 mt-1">Marca la donación como "En tránsito"</p>
+                    <p className="text-sm text-orange-50 mt-1">Recogés la donación y la llevás al centro de acopio. La marca como "Recibido".</p>
                   </button>
 
                   <button
                     type="button"
                     onClick={handleDelivery}
-                    disabled={!!confirming || selected.estado === "Entregado"}
+                    disabled={!!confirming || !canDeliver}
                     aria-busy={confirming === "delivery" ? "true" : undefined}
                     className="bg-green-700 hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl p-6 text-left transition"
                   >
@@ -184,7 +189,7 @@ export default function ConfirmActionPage() {
                       )}
                     </div>
                     <p className="font-semibold text-white text-base">Confirmar entrega</p>
-                    <p className="text-sm text-green-50 mt-1">Marca la donación como "Entregado"</p>
+                    <p className="text-sm text-green-50 mt-1">Llevás la donación del centro de acopio al beneficiario. La marca como "Entregado".</p>
                   </button>
                 </div>
               </>

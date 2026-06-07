@@ -36,3 +36,28 @@ export const STATUS_OPTIONS = ALL_STATUSES.map((s) => ({
   value: s,
   label: STATUS_CONFIG[s].label,
 }));
+
+/**
+ * Orden secuencial obligatorio del ciclo de vida de una donación.
+ * No se permite saltarse pasos: cada donación solo puede avanzar al
+ * estado inmediatamente siguiente.
+ *
+ *  Pendiente   → la registró el donante
+ *  Recibido    → transportista la llevó al centro de acopio
+ *  Clasificado → admin la clasificó
+ *  En tránsito → admin asignó beneficiario y transportista; va en camino
+ *  Entregado   → transportista la entregó al beneficiario
+ */
+export const STATUS_FLOW = [
+  "Pendiente",
+  "Recibido",
+  "Clasificado",
+  "En tránsito",
+  "Entregado",
+];
+
+/** Devuelve el siguiente estado del flujo, o null si ya está Entregado. */
+export function getNextStatus(current) {
+  const i = STATUS_FLOW.indexOf(current);
+  return i >= 0 && i < STATUS_FLOW.length - 1 ? STATUS_FLOW[i + 1] : null;
+}

@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { useAdminNav } from "../../hooks/useAdminNav.jsx";
 import { usePageTitle } from "../../hooks/usePageTitle.js";
 import { donationService } from "../../services/api";
-import { STATUS_OPTIONS, ALL_STATUSES } from "../../utils/donationStatus";
+import { STATUS_OPTIONS, getNextStatus } from "../../utils/donationStatus";
 import Sidebar from "../../components/modules/sidebar/Sidebar";
 import DashboardLayout from "../../components/modules/sidebar/DashboardLayout";
 import PageHeader from "../../components/ui/PageHeader";
@@ -41,7 +41,9 @@ export default function AdminDonationsPage() {
     });
   }, [donations, search, statusFilter]);
 
-  const handleStateChange = async (id, newState) => {
+  const handleAdvanceState = async (id) => {
+    const current = donations.find((d) => d.id === id)?.estado;
+    const newState = getNextStatus(current);
     if (!newState) return;
     try {
       await donationService.cambiarEstado(id, newState);
@@ -113,7 +115,7 @@ export default function AdminDonationsPage() {
             <caption className="sr-only">Listado de donaciones del sistema</caption>
             <thead>
               <tr className="text-xs text-gray-600 uppercase tracking-wider border-b border-gray-100">
-                {["ID", "Donante", "Tipo", "Cantidad", "Fecha", "Estado", "Cambiar estado"].map(
+                {["ID", "Donante", "Tipo", "Cantidad", "Fecha", "Estado", "Avanzar estado"].map(
                   (h) => (
                     <th key={h} scope="col" className="text-left pb-3 font-medium">{h}</th>
                   )
@@ -140,20 +142,18 @@ export default function AdminDonationsPage() {
                     <StatusBadge status={d.estado} />
                   </td>
                   <td className="py-4">
-                    <div className="relative">
-                      <select
-                        aria-label={`Cambiar estado de la donacion ${d.id}`}
-                        defaultValue=""
-                        onChange={(e) => handleStateChange(d.id, e.target.value)}
-                        className="appearance-none border border-gray-200 rounded-lg px-3 py-1.5 pr-8 text-xs text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-primary-400"
+                    {getNextStatus(d.estado) ? (
+                      <button
+                        type="button"
+                        onClick={() => handleAdvanceState(d.id)}
+                        aria-label={`Avanzar la donacion ${d.id} de "${d.estado}" a "${getNextStatus(d.estado)}"`}
+                        className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-medium text-primary-700 bg-white hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-400"
                       >
-                        <option value="" disabled>Cambiar...</option>
-                        {ALL_STATUSES.map((s) => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
-                      </select>
-                      <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
-                    </div>
+                        Avanzar a {getNextStatus(d.estado)}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-gray-500">Completado</span>
+                    )}
                   </td>
                 </tr>
               ))}
