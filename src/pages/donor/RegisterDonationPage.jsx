@@ -57,6 +57,7 @@ export default function RegisterDonationPage() {
         cantidad: Number(data.cantidad),
         unidadMedida: data.unidadMedida,
         descripcion: data.descripcion,
+        foto: data.foto,
       };
       await donationService.crear(payload);
       toast.success("¡Donación registrada exitosamente!");
@@ -148,7 +149,6 @@ export default function RegisterDonationPage() {
             <div className="flex flex-col gap-1">
               <label id="foto-label" className="text-sm font-medium text-gray-800">
                 Foto de los artículos{" "}
-                <span className="text-gray-600 font-normal">(opcional)</span>
               </label>
               <Controller
                 name="foto"
@@ -157,6 +157,9 @@ export default function RegisterDonationPage() {
                   <FileDropzone label="foto de los artículos" onChange={field.onChange} />
                 )}
               />
+              {errors.foto && (
+                <p className="text-xs text-red-500">{errors.foto.message}</p>
+              )}
             </div>
 
             <div className="flex gap-3 pt-2">

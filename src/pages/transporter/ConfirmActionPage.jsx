@@ -41,7 +41,7 @@ export default function ConfirmActionPage() {
     if (!selected || !canPickup) return;
     setConfirming("pickup");
     try {
-      await transporterService.confirmarRecogida(selected.id);
+      await transporterService.confirmarRecogida(selected.apiId ?? selected.id);
       toast.success(`Recogida confirmada: ${selected.tipoDonacion} llegó al centro de acopio`);
       navigate("/transporter/dashboard");
     } catch (err) {
@@ -55,7 +55,7 @@ export default function ConfirmActionPage() {
     if (!selected || !canDeliver) return;
     setConfirming("delivery");
     try {
-      await transporterService.confirmarEntrega(selected.id);
+      await transporterService.confirmarEntrega(selected.apiId ?? selected.id);
       toast.success(`¡Entrega confirmada! ¡Buen trabajo!`);
       navigate("/transporter/dashboard");
     } catch (err) {

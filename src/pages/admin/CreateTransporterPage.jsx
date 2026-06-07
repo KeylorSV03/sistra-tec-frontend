@@ -31,7 +31,8 @@ export default function CreateTransporterPage() {
     setLoading(true);
     try {
       await transporterService.crear(data);
-      toast.success("Transportista creado. Se envió la contraseña temporal al correo.");
+      window.dispatchEvent(new Event("sistra:notifications-changed"));
+      toast.success("Transportista creado. Se notifico al transportista en el sistema.");
       navigate("/admin/transporters");
     } catch (err) {
       toast.error(err.message);

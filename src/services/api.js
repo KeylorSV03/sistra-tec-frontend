@@ -1,180 +1,428 @@
 import axios from "axios";
+import { formatDate, timeAgo } from "../utils/dateUtils";
 
-// ─── Cliente HTTP (para cuando haya backend real) ─────────────────────────────
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/+$/, "");
+const API_PREFIX = API_BASE_URL.endsWith("/api") ? "" : "/api";
+const ACCESS_TOKEN_KEY = "sistra_access_token";
+const SESSION_KEY = "sistra_user";
+
+const endpoint = (path) => `${API_PREFIX}${path}`;
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
-  headers: { "Content-Type": "application/json" },
+  baseURL: API_BASE_URL,
   withCredentials: true,
+});
+
+export const getAccessToken = () => sessionStorage.getItem(ACCESS_TOKEN_KEY);
+
+export const setAccessToken = (token) => {
+  if (token) sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
+};
+
+export const getStoredUser = () => {
+  try {
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const saveUser = (user) => {
+  if (user) sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
+};
+
+export const clearSession = () => {
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  sessionStorage.removeItem(SESSION_KEY);
+};
+
+api.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    const mensaje =
-      error.response?.data?.message || "Error inesperado. Intenta de nuevo.";
-    return Promise.reject(new Error(mensaje));
+  async (error) => {
+    const originalRequest = error.config || {};
+    const status = error.response?.status;
+    const url = originalRequest.url || "";
+    const isAuthEndpoint = url.includes("/auth/login") || url.includes("/auth/refresh");
+
+    if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+      originalRequest._retry = true;
+      try {
+        const refreshResponse = await api.post(endpoint("/auth/refresh"));
+        setAccessToken(refreshResponse.data.accessToken);
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers.Authorization = `Bearer ${refreshResponse.data.accessToken}`;
+        return api(originalRequest);
+      } catch {
+        clearSession();
+      }
+    }
+
+    const message =
+      error.response?.data?.message ||
+      (status === 401 ? "Sesion expirada. Inicia sesion de nuevo." : "Error inesperado. Intenta de nuevo.");
+    return Promise.reject(new Error(message));
   }
 );
 
-// ─── Datos de prueba ──────────────────────────────────────────────────────────
-const MOCK_DONATIONS = [
-  { id: "DON-001", tipoDonacion: "Alimentos no perecederos", cantidad: 50, unidadMedida: "kg", descripcion: "Arroz, frijoles, azúcar y aceite envasado. Todo sellado.", fecha: "2024-11-01", estado: "En tránsito", donante: "María González", correoDonante: "donante@sistratec.cr" },
-  { id: "DON-002", tipoDonacion: "Ropa", cantidad: 30, unidadMedida: "prendas", descripcion: "Ropa de adulto en buen estado, incluye abrigos.", fecha: "2024-10-28", estado: "Entregado", donante: "María González", correoDonante: "donante@sistratec.cr" },
-  { id: "DON-003", tipoDonacion: "Medicamentos", cantidad: 10, unidadMedida: "cajas", descripcion: "Medicamentos de primeros auxilios, sin vencimiento próximo.", fecha: "2024-11-05", estado: "Clasificado", donante: "María González", correoDonante: "donante@sistratec.cr" },
-  { id: "DON-004", tipoDonacion: "Agua potable", cantidad: 200, unidadMedida: "litros", descripcion: "Botellas selladas de 5 litros.", fecha: "2024-11-07", estado: "Recibido", donante: "Roberto Salas", correoDonante: "roberto@ejemplo.cr" },
-  { id: "DON-005", tipoDonacion: "Artículos de higiene", cantidad: 100, unidadMedida: "unidades", descripcion: "Jabón, shampoo, pasta dental.", fecha: "2024-11-08", estado: "Pendiente", donante: "Ana Jiménez", correoDonante: "ana@ejemplo.cr" },
-  { id: "DON-006", tipoDonacion: "Frazadas", cantidad: 25, unidadMedida: "unidades", descripcion: "Frazadas en buen estado.", fecha: "2024-11-03", estado: "En tránsito", donante: "Carlos Pérez", correoDonante: "carlos@ejemplo.cr" },
-];
+const responseWith = (response, data) => ({
+  ...response,
+  data: {
+    ...response.data,
+    ...data,
+  },
+});
 
-const MOCK_INVENTORY = [
-  { id: "INV-001", tipo: "Alimentos no perecederos", cantidad: 50, unidad: "kg", estado: "Asignado", asignadoA: "Albergue Guanacaste Norte", recibido: "2024-11-02" },
-  { id: "INV-002", tipo: "Ropa", cantidad: 30, unidad: "prendas", estado: "Entregado", asignadoA: "Cruz Roja Pérez Zeledón", recibido: "2024-10-29" },
-  { id: "INV-003", tipo: "Medicamentos", cantidad: 10, unidad: "cajas", estado: "Disponible", asignadoA: null, recibido: "2024-11-06" },
-  { id: "INV-004", tipo: "Agua potable", cantidad: 200, unidad: "litros", estado: "Disponible", asignadoA: null, recibido: "2024-11-07" },
-  { id: "INV-005", tipo: "Frazadas", cantidad: 25, unidad: "unidades", estado: "Asignado", asignadoA: "Centro de Acopio", recibido: "2024-11-04" },
-];
+const normalizeText = (value) =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 
-const MOCK_TRANSPORTERS = [
-  { id: "TRP-001", nombre: "Luis Mora", correo: "luis.mora@trans.cr", telefono: "+506 8888-1234", asignacionesActivas: 2, estado: "Activo" },
-  { id: "TRP-002", nombre: "Ana Vargas", correo: "ana.vargas@trans.cr", telefono: "+506 8777-5678", asignacionesActivas: 0, estado: "Activo" },
-  { id: "TRP-003", nombre: "Diego Solís", correo: "diego.solis@trans.cr", telefono: "+506 8666-9012", asignacionesActivas: 1, estado: "Activo" },
-  { id: "TRP-004", nombre: "Patricia Núñez", correo: "patricia.nunez@trans.cr", telefono: "+506 8555-3456", asignacionesActivas: 0, estado: "Inactivo" },
-];
+const normalizeStatus = (value) => {
+  const text = normalizeText(value);
+  if (text.includes("pendiente")) return "Pendiente";
+  if (text.includes("recibido")) return "Recibido";
+  if (text.includes("clasificado")) return "Clasificado";
+  if (text.includes("transito") || text.includes("recogida")) return "En tránsito";
+  if (text.includes("entregado")) return "Entregado";
+  return value || "Pendiente";
+};
 
-const MOCK_ASSIGNMENTS = [
-  { id: "DON-001", donacionId: "DON-001", tipoDonacion: "Alimentos no perecederos", cantidad: 50, unidad: "kg", descripcion: "Arroz, frijoles, azúcar y aceite envasado. Todo sellado.", donante: "María González", telefono: "+506 8800-1234", direccionRecogida: "Av. Central, San José, Costa Rica", destino: "Albergue Guanacaste Norte", estado: "En tránsito" },
-  { id: "DON-006", donacionId: "DON-006", tipoDonacion: "Frazadas", cantidad: 25, unidad: "unidades", descripcion: "Frazadas en buen estado.", donante: "Carlos Pérez", telefono: "+506 8800-5678", direccionRecogida: "Barrio Los Yoses, San José", destino: "Centro de Acopio Limón", estado: "En tránsito" },
-];
+const statusIdFromLabel = (label) => {
+  const text = normalizeText(label);
+  if (text.includes("pendiente")) return 1;
+  if (text.includes("recibido")) return 2;
+  if (text.includes("clasificado")) return 3;
+  if (text.includes("transito") || text.includes("recogida")) return 4;
+  if (text.includes("entregado")) return 5;
+  throw new Error("Estado de donacion no reconocido.");
+};
 
-const MOCK_NOTIFICATIONS_DONOR = [
-  { id: 1, mensaje: 'Tu donación DON-001 "Alimentos no perecederos" está en tránsito.', tiempo: "Hace 2 horas", leido: false, tipo: "En tránsito" },
-  { id: 2, mensaje: 'Tu donación DON-002 "Ropa" ha sido entregada exitosamente.', tiempo: "Hace 1 día", leido: true, tipo: "Entregado" },
-];
+const code = (prefix, id) => {
+  if (id === undefined || id === null || id === "") return "";
+  const value = String(id);
+  if (value.startsWith(`${prefix}-`)) return value;
+  return `${prefix}-${value.padStart(3, "0")}`;
+};
 
-const MOCK_NOTIFICATIONS_ADMIN = [
-  { id: 1, mensaje: "Se registró una nueva donación de artículos de higiene (DON-005).", tiempo: "Hace 3 horas", leido: false, tipo: "nueva" },
-  { id: 2, mensaje: "Luis Mora confirmó la recogida de DON-001.", tiempo: "Hace 5 horas", leido: false, tipo: "En tránsito" },
-  { id: 3, mensaje: "Hay 3 donaciones sin clasificar que requieren atención.", tiempo: "Hace 6 horas", leido: false, tipo: "alerta" },
-];
+const numericId = (id) => {
+  if (typeof id === "number") return id;
+  const match = String(id ?? "").match(/(\d+)$/);
+  return match ? Number(match[1]) : Number(id);
+};
 
-const MOCK_NOTIFICATIONS_TRANSPORTER = [
-  { id: 1, mensaje: 'Nueva asignación: DON-001 "Alimentos no perecederos" para entregar.', tiempo: "Hace 1 día", leido: false, tipo: "En tránsito" },
-  { id: 2, mensaje: "Entrega DON-006 confirmada. ¡Buen trabajo!", tiempo: "Hace 2 días", leido: true, tipo: "Entregado" },
-];
+const toAppUser = (user) => {
+  if (!user) return null;
+  return {
+    id: user.id,
+    nombre: user.name ?? user.nombre,
+    correo: user.email ?? user.correo,
+    telefono: user.phoneNumber ?? user.phone_number ?? user.telefono,
+    fotoPerfil: user.profilePhotoUrl ?? user.profile_photo_url,
+    tipoUsuario: user.rolId ?? user.rol_id,
+    rolNombre: user.rolName ?? user.rol_name,
+    activo: user.isActive ?? user.is_active,
+  };
+};
 
-// Helper para simular delay de red
-const delay = (ms = 400) => new Promise((r) => setTimeout(r, ms));
-const ok = (data) => Promise.resolve({ data });
+const toDonation = (donation) => {
+  const status = normalizeStatus(donation.statusName ?? donation.status_name ?? donation.estado);
+  return {
+    id: code("DON", donation.id),
+    apiId: donation.id,
+    givingId: donation.givingId ?? donation.giving_id,
+    tipoDonacion: donation.itemName ?? donation.item_name ?? donation.tipoDonacion,
+    cantidad: donation.quantity ?? donation.cantidad,
+    unidadMedida: donation.unit ?? donation.unidadMedida,
+    unidad: donation.unit ?? donation.unidad,
+    descripcion: donation.description ?? donation.descripcion ?? "",
+    fecha: formatDate(donation.date ?? donation.fecha),
+    estado: status,
+    statusId: donation.statusId ?? donation.status_id,
+    donante: donation.donorName ?? donation.donor_name ?? donation.donante,
+    correoDonante: donation.donorEmail ?? donation.donor_email ?? donation.correoDonante,
+    telefonoDonante: donation.donorPhone ?? donation.donor_phone,
+    imageUrl: donation.imageUrl ?? donation.image_url,
+  };
+};
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
+const toTransporter = (transporter) => ({
+  id: code("TRP", transporter.id),
+  apiId: transporter.id,
+  nombre: transporter.name ?? transporter.nombre,
+  correo: transporter.email ?? transporter.correo,
+  telefono: transporter.phoneNumber ?? transporter.phone_number ?? transporter.telefono,
+  fotoPerfil: transporter.profilePhotoUrl ?? transporter.profile_photo_url,
+  asignacionesActivas: transporter.activeAssignments ?? transporter.active_assignments ?? 0,
+  estado: (transporter.isActive ?? transporter.is_active) ? "Activo" : "Inactivo",
+});
+
+const toAssignment = (delivery) => {
+  const donationId = delivery.donationId ?? delivery.donation_id ?? delivery.id;
+  return {
+    id: code("DON", donationId),
+    apiId: donationId,
+    deliveryId: delivery.deliveryId ?? delivery.delivery_id,
+    donacionId: code("DON", donationId),
+    tipoDonacion: delivery.itemName ?? delivery.item_name ?? delivery.tipoDonacion,
+    cantidad: delivery.quantity ?? delivery.cantidad,
+    unidad: delivery.unit ?? delivery.unidad,
+    descripcion: delivery.description ?? delivery.descripcion ?? "",
+    donante: delivery.donorName ?? delivery.donor_name ?? delivery.donante,
+    correoDonante: delivery.donorEmail ?? delivery.donor_email,
+    telefono: delivery.donorPhone ?? delivery.donor_phone ?? delivery.telefono,
+    transportistaId: delivery.driverId ?? delivery.driver_id,
+    transportista: delivery.driverName ?? delivery.driver_name,
+    correoTransportista: delivery.driverEmail ?? delivery.driver_email,
+    direccionRecogida: delivery.collectionAddress ?? delivery.collection_address,
+    destino: delivery.destination ?? delivery.destino,
+    estado: normalizeStatus(delivery.statusName ?? delivery.status_name ?? delivery.estado),
+    fechaAsignacion: formatDate(delivery.assignedAt ?? delivery.assigned_at),
+    tipoEntrega: delivery.deliveryType ?? delivery.delivery_type,
+  };
+};
+
+const notificationType = (notification) => {
+  const event = normalizeText(notification.event_type ?? notification.tipo);
+  if (event.includes("transito") || event.includes("recogida")) return "En tránsito";
+  if (event.includes("entregado")) return "Entregado";
+  if (event.includes("alerta")) return "alerta";
+  if (event.includes("nueva") || event.includes("creada")) return "nueva";
+  return notification.tipo ?? "default";
+};
+
+const toNotification = (notification) => ({
+  id: notification.id,
+  titulo: notification.title ?? notification.titulo,
+  mensaje: notification.body ?? notification.message ?? notification.mensaje ?? notification.title,
+  tiempo: notification.created_at || notification.createdAt ? timeAgo(notification.created_at ?? notification.createdAt) : "",
+  leido: notification.is_read ?? notification.leido ?? false,
+  tipo: notificationType(notification),
+  donationId: notification.donation_id ?? notification.donationId,
+});
+
 export const authService = {
-  verificar: () => ok(null),
-  login: (data) => ok(null),
-  logout: () => ok(null),
-  registrarDonante: async (data) => {
-    await delay();
-    return ok({ mensaje: "Cuenta creada exitosamente" });
+  verificar: async () => {
+    const response = await api.get(endpoint("/auth/profile"));
+    const usuario = toAppUser(response.data.user);
+    saveUser(usuario);
+    return responseWith(response, { usuario });
   },
-};
 
-// ─── Donaciones ───────────────────────────────────────────────────────────────
-export const donationService = {
-  listar: async () => {
-    await delay();
-    return ok({ donaciones: MOCK_DONATIONS });
+  login: async ({ identificacion, correo, email, password }) => {
+    const response = await api.post(endpoint("/auth/login"), {
+      email: identificacion ?? correo ?? email,
+      password,
+    });
+    setAccessToken(response.data.accessToken);
+    const usuario = toAppUser(response.data.user);
+    saveUser(usuario);
+    return responseWith(response, { usuario });
   },
-  obtener: async (id) => {
-    await delay();
-    return ok({ donacion: MOCK_DONATIONS.find((d) => d.id === id) });
-  },
-  crear: async (data) => {
-    await delay(800);
-    const newId = `DON-00${MOCK_DONATIONS.length + 1}`;
-    MOCK_DONATIONS.unshift({ ...data, id: newId, fecha: new Date().toISOString().slice(0, 10), estado: "Pendiente", donante: "María González" });
-    return ok({ donacion: MOCK_DONATIONS[0] });
-  },
-  cambiarEstado: async (id, estado) => {
-    await delay();
-    const d = MOCK_DONATIONS.find((d) => d.id === id);
-    if (d) d.estado = estado;
-    return ok({ mensaje: "Estado actualizado" });
-  },
-  misDonaciones: async () => {
-    await delay();
-    return ok({ donaciones: MOCK_DONATIONS.filter((d) => d.donante === "María González") });
-  },
-};
 
-// ─── Inventario ───────────────────────────────────────────────────────────────
-export const inventoryService = {
-  listar: async () => {
-    await delay();
-    return ok({ inventario: MOCK_INVENTORY });
-  },
-  asignar: async (id, data) => {
-    await delay();
-    const item = MOCK_INVENTORY.find((i) => i.id === id);
-    if (item) { item.estado = "Asignado"; item.asignadoA = data.beneficiario; }
-    return ok({ mensaje: "Asignado correctamente" });
-  },
-};
-
-// ─── Transportistas ───────────────────────────────────────────────────────────
-export const transporterService = {
-  listar: async () => {
-    await delay();
-    return ok({ transportistas: MOCK_TRANSPORTERS });
-  },
-  obtener: async (id) => {
-    await delay();
-    return ok({ transportista: MOCK_TRANSPORTERS.find((t) => t.id === id) });
-  },
-  crear: async (data) => {
-    await delay(800);
-    return ok({ mensaje: "Transportista creado" });
-  },
-  misAsignaciones: async () => {
-    await delay();
-    return ok({ asignaciones: MOCK_ASSIGNMENTS });
-  },
-  confirmarRecogida: async (id) => {
-    await delay();
-    return ok({ mensaje: "Recogida confirmada" });
-  },
-  confirmarEntrega: async (id) => {
-    await delay();
-    return ok({ mensaje: "Entrega confirmada" });
-  },
-};
-
-// ─── Notificaciones ───────────────────────────────────────────────────────────
-let notifDonor = [...MOCK_NOTIFICATIONS_DONOR];
-let notifAdmin = [...MOCK_NOTIFICATIONS_ADMIN];
-let notifTransporter = [...MOCK_NOTIFICATIONS_TRANSPORTER];
-
-export const notificationService = {
-  listar: async () => {
-    await delay();
-    // Devuelve según usuario en sessionStorage
+  logout: async () => {
     try {
-      const u = JSON.parse(sessionStorage.getItem("sistra_user") || "{}");
-      const notifs = u.tipoUsuario === 1 ? notifAdmin : u.tipoUsuario === 3 ? notifTransporter : notifDonor;
-      return ok({ notificaciones: notifs });
-    } catch {
-      return ok({ notificaciones: notifDonor });
+      await api.post(endpoint("/auth/logout"));
+    } finally {
+      clearSession();
     }
   },
-  marcarTodasLeidas: async () => {
-    await delay();
-    notifDonor = notifDonor.map((n) => ({ ...n, leido: true }));
-    notifAdmin = notifAdmin.map((n) => ({ ...n, leido: true }));
-    notifTransporter = notifTransporter.map((n) => ({ ...n, leido: true }));
-    return ok({ mensaje: "Marcadas como leídas" });
+
+  registrarDonante: async ({ nombre, correo, password, telefono }) => {
+    const response = await api.post(endpoint("/auth/register"), {
+      name: nombre,
+      email: correo,
+      password,
+      phone_number: telefono || undefined,
+    });
+    return responseWith(response, { usuario: toAppUser(response.data.user) });
   },
-  marcarLeida: async (id) => {
-    await delay();
-    return ok({ mensaje: "Marcada como leída" });
+};
+
+export const donationService = {
+  listar: async (params = {}) => {
+    const response = await api.get(endpoint("/donations"), { params });
+    return responseWith(response, {
+      donaciones: (response.data.donations ?? []).map(toDonation),
+    });
   },
+
+  obtener: async (id) => {
+    const response = await api.get(endpoint(`/donations/${numericId(id)}`));
+    return responseWith(response, { donacion: toDonation(response.data.donation) });
+  },
+
+  crear: async (data) => {
+    if (!data.foto) {
+      throw new Error("La imagen del bien es obligatoria.");
+    }
+
+    const formData = new FormData();
+    formData.append("item_name", data.tipoDonacion);
+    formData.append("description", data.descripcion ?? "");
+    formData.append("quantity", Number(data.cantidad));
+    formData.append("unit", data.unidadMedida);
+    formData.append("image", data.foto);
+
+    const response = await api.post(endpoint("/donations"), formData);
+    return responseWith(response, { donacion: toDonation(response.data.donation) });
+  },
+
+  cambiarEstado: async (id, estado) => {
+    const response = await api.patch(endpoint(`/donations/${numericId(id)}/status`), {
+      status_id: statusIdFromLabel(estado),
+    });
+    return responseWith(response, { donacion: toDonation(response.data.donation) });
+  },
+
+  misDonaciones: async (params = {}) => donationService.listar(params),
+};
+
+export const inventoryService = {
+  listar: async (params = {}) => {
+    const [donationsResponse, deliveriesResponse] = await Promise.all([
+      donationService.listar({ limit: 100, ...params }),
+      api.get(endpoint("/admin/deliveries"), { params: { limit: 100 } }).catch(() => ({ data: { deliveries: [] } })),
+    ]);
+    const deliveries = (deliveriesResponse.data.deliveries ?? []).map(toAssignment);
+    const deliveriesByDonationId = new Map(deliveries.map((delivery) => [String(delivery.apiId), delivery]));
+
+    const inventario = (donationsResponse.data.donaciones ?? []).map((donation) => {
+      const delivery = deliveriesByDonationId.get(String(donation.apiId));
+      const estado = normalizeStatus(delivery?.estado ?? donation.estado);
+      return {
+        id: donation.id,
+        apiId: donation.apiId,
+        tipo: donation.tipoDonacion,
+        cantidad: donation.cantidad,
+        unidad: donation.unidadMedida,
+        estado,
+        asignado: Boolean(delivery),
+        disponibleParaAsignar: !delivery && estado !== "Entregado",
+        asignadoA: delivery?.destino ?? null,
+        transportista: delivery?.transportista,
+        recibido: donation.fecha,
+      };
+    });
+    return responseWith(donationsResponse, { inventario });
+  },
+
+  asignar: async (id, data) => {
+    const response = await api.post(endpoint("/admin/deliveries"), {
+      donation_id: numericId(id),
+      transporter_id: numericId(data.transporterId),
+      collection_address: data.collectionAddress,
+      destination: data.destination,
+      delivery_type: data.deliveryType || "pickup",
+    });
+    return responseWith(response, { asignacion: toAssignment(response.data.delivery) });
+  },
+};
+
+export const transporterService = {
+  listar: async (params = {}) => {
+    const response = await api.get(endpoint("/admin/transporters"), { params });
+    return responseWith(response, {
+      transportistas: (response.data.transporters ?? []).map(toTransporter),
+    });
+  },
+
+  obtener: async (id) => {
+    const transporters = await transporterService.listar();
+    const transportista = (transporters.data.transportistas ?? []).find(
+      (item) => item.apiId === numericId(id) || item.id === id
+    );
+    return responseWith(transporters, { transportista });
+  },
+
+  crear: async ({ nombre, correo, telefono, password }) => {
+    const response = await api.post(endpoint("/admin/transporters"), {
+      name: nombre,
+      email: correo,
+      phone_number: telefono,
+      password,
+    });
+    return responseWith(response, { transportista: toTransporter(response.data.transporter) });
+  },
+
+  actualizarEstado: async (id, isActive) => {
+    const response = await api.patch(endpoint(`/admin/transporters/${numericId(id)}/status`), {
+      is_active: isActive,
+    });
+    return responseWith(response, { transportista: toTransporter(response.data.transporter) });
+  },
+
+  asignarEntrega: async (data) => {
+    const response = await api.post(endpoint("/admin/deliveries"), {
+      donation_id: numericId(data.donationId),
+      transporter_id: numericId(data.transporterId),
+      collection_address: data.collectionAddress,
+      destination: data.destination,
+      delivery_type: data.deliveryType || "pickup",
+    });
+    return responseWith(response, { asignacion: toAssignment(response.data.delivery) });
+  },
+
+  listarEntregas: async (params = {}) => {
+    const response = await api.get(endpoint("/admin/deliveries"), { params });
+    return responseWith(response, {
+      asignaciones: (response.data.deliveries ?? []).map(toAssignment),
+    });
+  },
+
+  asignacionesDeTransportista: async (id, params = {}) => {
+    const response = await api.get(endpoint(`/admin/transporters/${numericId(id)}/deliveries`), { params });
+    return responseWith(response, {
+      asignaciones: (response.data.deliveries ?? []).map(toAssignment),
+    });
+  },
+
+  misAsignaciones: async (params = {}) => {
+    const response = await api.get(endpoint("/transporter/deliveries"), { params });
+    return responseWith(response, {
+      asignaciones: (response.data.deliveries ?? []).map(toAssignment),
+    });
+  },
+
+  obtenerAsignacion: async (id) => {
+    const response = await api.get(endpoint(`/transporter/deliveries/${numericId(id)}`));
+    return responseWith(response, { asignacion: toAssignment(response.data.delivery) });
+  },
+
+  confirmarRecogida: async (id) => {
+    const response = await api.patch(endpoint(`/transporter/deliveries/${numericId(id)}/pickup`));
+    return responseWith(response, { asignacion: toAssignment(response.data.delivery) });
+  },
+
+  confirmarEntrega: async (id) => {
+    const response = await api.patch(endpoint(`/transporter/deliveries/${numericId(id)}/deliver`));
+    return responseWith(response, { asignacion: toAssignment(response.data.delivery) });
+  },
+};
+
+export const notificationService = {
+  listar: async (params = {}) => {
+    const response = await api.get(endpoint("/notifications"), { params });
+    const payload = response.data.data ?? {};
+    return responseWith(response, {
+      notificaciones: (payload.notifications ?? []).map(toNotification),
+      pagination: payload.pagination,
+    });
+  },
+
+  marcarTodasLeidas: async () => api.patch(endpoint("/notifications/read-all")),
+
+  marcarLeida: async (id) => api.patch(endpoint(`/notifications/${numericId(id)}/read`)),
 };
 
 export default api;

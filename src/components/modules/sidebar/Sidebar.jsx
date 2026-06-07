@@ -1,17 +1,41 @@
-import { cloneElement, isValidElement } from "react";
+import { cloneElement, isValidElement, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Heart, LogOut } from "lucide-react";
-import { useAuth } from "../../../hooks/useAuth";
-import { authService } from "../../../services/api";
 import { toast } from "react-toastify";
 
-/**
- * Role-aware sidebar navigation.
- * navItems: [{ to, icon, label }]
- */
+import { useAuth } from "../../../hooks/useAuth";
+import { notificationService } from "../../../services/api";
+
 export default function Sidebar({ navItems }) {
   const { user, logoutUser } = useAuth();
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return undefined;
+
+    let mounted = true;
+    const loadUnread = () => {
+      notificationService
+        .listar({ limit: 1 })
+        .then((res) => {
+          if (mounted) setUnreadCount(res.data.pagination?.unread_count ?? 0);
+        })
+        .catch(() => {
+          if (mounted) setUnreadCount(0);
+        });
+    };
+
+    loadUnread();
+    window.addEventListener("sistra:notifications-changed", loadUnread);
+    const intervalId = window.setInterval(loadUnread, 30000);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener("sistra:notifications-changed", loadUnread);
+      window.clearInterval(intervalId);
+    };
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -26,7 +50,7 @@ export default function Sidebar({ navItems }) {
     ? user.nombre
         .split(" ")
         .slice(0, 2)
-        .map((w) => w[0])
+        .map((word) => word[0])
         .join("")
         .toUpperCase()
     : "?";
@@ -35,8 +59,7 @@ export default function Sidebar({ navItems }) {
     isValidElement(icon) ? cloneElement(icon, { "aria-hidden": "true" }) : icon;
 
   return (
-    <aside aria-label="Navegacion principal" className="w-[270px] min-h-screen bg-dark-900 flex flex-col shrink-0">
-      {/* Logo */}
+    <aside aria-label="Navegación principal" className="w-[270px] min-h-screen bg-dark-900 flex flex-col shrink-0">
       <div className="flex items-center gap-3 px-5 py-5 border-b border-dark-700">
         <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center shrink-0">
           <Heart aria-hidden="true" className="w-4 h-4 text-white" />
@@ -47,7 +70,6 @@ export default function Sidebar({ navItems }) {
         </div>
       </div>
 
-      {/* User info */}
       {user && (
         <div className="flex items-center gap-3 px-5 py-4 border-b border-dark-700">
           <div className="w-9 h-9 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-semibold shrink-0">
@@ -60,8 +82,7 @@ export default function Sidebar({ navItems }) {
         </div>
       )}
 
-      {/* Nav */}
-      <nav aria-label="Menu principal" className="flex-1 px-3 py-4">
+      <nav aria-label="Menú principal" className="flex-1 px-3 py-4">
         <p className="text-gray-300 text-[10px] font-semibold uppercase tracking-widest px-3 mb-3">
           Menú principal
         </p>
@@ -79,14 +100,19 @@ export default function Sidebar({ navItems }) {
                 }
               >
                 {renderIcon(item.icon)}
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.to.includes("notifications") && unreadCount > 0 && (
+                  <span className="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                    <span className="sr-only">Notificaciones sin leer: </span>
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </NavLink>
             </li>
           ))}
         </ul>
       </nav>
 
-      {/* Logout */}
       <div className="px-3 py-4 border-t border-dark-700">
         <button
           type="button"

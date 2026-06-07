@@ -23,11 +23,8 @@ export default function AssignmentDetailPage() {
 
   useEffect(() => {
     transporterService
-      .misAsignaciones()
-      .then((res) => {
-        const found = (res.data.asignaciones ?? []).find((a) => a.id === id);
-        setAssignment(found ?? null);
-      })
+      .obtenerAsignacion(id)
+      .then((res) => setAssignment(res.data.asignacion ?? null))
       .catch(() => setAssignment(null))
       .finally(() => setLoading(false));
   }, [id]);
@@ -38,7 +35,7 @@ export default function AssignmentDetailPage() {
     if (!canDeliver) return;
     setConfirming(true);
     try {
-      await transporterService.confirmarEntrega(id);
+      await transporterService.confirmarEntrega(assignment?.apiId ?? id);
       toast.success("¡Entrega confirmada exitosamente!");
       navigate("/transporter/dashboard");
     } catch (err) {
