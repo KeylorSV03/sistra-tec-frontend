@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ClipboardList, Mail, Phone, Search, UserPlus, X } from "lucide-react";
+import { ClipboardList, Mail, Phone, Search, UserPlus, X, ToggleLeft, ToggleRight } from "lucide-react";
 import { toast } from "react-toastify";
 
 import { useAdminNav } from "../../hooks/useAdminNav.jsx";
@@ -49,6 +49,7 @@ export default function AdminTransportersPage() {
   const [selectedTransporter, setSelectedTransporter] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -96,6 +97,30 @@ export default function AdminTransportersPage() {
   const closeAssignments = () => {
     setSelectedTransporter(null);
     setAssignments([]);
+  };
+
+  const handleToggleStatus = async (transporter) => {
+    const newActive = transporter.estado !== "Activo";
+    setTogglingId(transporter.apiId ?? transporter.id);
+    try {
+      await transporterService.actualizarEstado(transporter.apiId ?? transporter.id, newActive);
+      setTransporters((curr) =>
+        curr.map((t) =>
+          t.id === transporter.id
+            ? { ...t, estado: newActive ? "Activo" : "Inactivo" }
+            : t
+        )
+      );
+      toast.success(
+        newActive
+          ? `${transporter.nombre} activado correctamente.`
+          : `${transporter.nombre} desactivado correctamente.`
+      );
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setTogglingId(null);
+    }
   };
 
   return (
@@ -197,16 +222,36 @@ export default function AdminTransportersPage() {
                     </span>
                   </td>
                   <td className="py-4">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="!text-xs !px-3 !py-1.5"
-                      onClick={() => openAssignments(transporter)}
-                      aria-label={`Ver asignaciones de ${transporter.nombre}`}
-                    >
-                      <ClipboardList aria-hidden="true" className="w-3.5 h-3.5" />
-                      Ver asignaciones
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="!text-xs !px-3 !py-1.5"
+                        onClick={() => openAssignments(transporter)}
+                        aria-label={`Ver asignaciones de ${transporter.nombre}`}
+                      >
+                        <ClipboardList aria-hidden="true" className="w-3.5 h-3.5" />
+                        Ver asignaciones
+                      </Button>
+                      <button
+                        type="button"
+                        disabled={togglingId === (transporter.apiId ?? transporter.id)}
+                        onClick={() => handleToggleStatus(transporter)}
+                        aria-label={transporter.estado === "Activo" ? `Desactivar a ${transporter.nombre}` : `Activar a ${transporter.nombre}`}
+                        aria-pressed={transporter.estado === "Activo"}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:opacity-50 ${
+                          transporter.estado === "Activo"
+                            ? "border-red-200 text-red-700 hover:bg-red-50"
+                            : "border-green-200 text-green-700 hover:bg-green-50"
+                        }`}
+                      >
+                        {transporter.estado === "Activo" ? (
+                          <><ToggleRight aria-hidden="true" className="w-3.5 h-3.5" /> Desactivar</>
+                        ) : (
+                          <><ToggleLeft aria-hidden="true" className="w-3.5 h-3.5" /> Activar</>
+                        )}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

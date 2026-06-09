@@ -106,13 +106,12 @@ export default function LoginPage() {
             {...register("password")}
           />
           <div className="text-right mt-1">
-            <button
-              type="button"
-              onClick={() => toast.info("La recuperacion de contraseña estara disponible proximamente.")}
+            <Link
+              to="/forgot-password"
               className="text-xs text-primary-600 hover:underline focus:outline-none focus:ring-2 focus:ring-primary-400 rounded"
             >
               ¿Olvidaste tu contraseña?
-            </button>
+            </Link>
           </div>
         </div>
         <Button type="submit" loading={loading} className="w-full">Iniciar sesión</Button>

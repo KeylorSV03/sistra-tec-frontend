@@ -178,6 +178,7 @@ const toAssignment = (delivery) => {
     cantidad: delivery.quantity ?? delivery.cantidad,
     unidad: delivery.unit ?? delivery.unidad,
     descripcion: delivery.description ?? delivery.descripcion ?? "",
+    imageUrl: delivery.imageUrl ?? delivery.image_url,
     donante: delivery.donorName ?? delivery.donor_name ?? delivery.donante,
     correoDonante: delivery.donorEmail ?? delivery.donor_email,
     telefono: delivery.donorPhone ?? delivery.donor_phone ?? delivery.telefono,
@@ -247,6 +248,28 @@ export const authService = {
     });
     return responseWith(response, { usuario: toAppUser(response.data.user) });
   },
+
+  olvidarContrasena: async (correo) => {
+    const response = await api.post(endpoint("/auth/forgot-password"), { email: correo });
+    return response;
+  },
+
+  verificarCodigo: async (correo, codigo) => {
+    const response = await api.post(endpoint("/auth/verify-reset-code"), {
+      email: correo,
+      code: codigo,
+    });
+    return response;
+  },
+
+  restablecerContrasena: async (resetToken, nuevaContrasena) => {
+    const response = await api.post(
+      endpoint("/auth/reset-password"),
+      { new_password: nuevaContrasena },
+      { headers: { "x-reset-token": resetToken } }
+    );
+    return response;
+  },
 };
 
 export const donationService = {
@@ -295,22 +318,37 @@ export const inventoryService = {
       api.get(endpoint("/admin/deliveries"), { params: { limit: 100 } }).catch(() => ({ data: { deliveries: [] } })),
     ]);
     const deliveries = (deliveriesResponse.data.deliveries ?? []).map(toAssignment);
-    const deliveriesByDonationId = new Map(deliveries.map((delivery) => [String(delivery.apiId), delivery]));
+
+    const pickupByDonation = new Map();
+    const dropoffByDonation = new Map();
+    for (const d of deliveries) {
+      const key = String(d.apiId);
+      if (d.tipoEntrega === "pickup") pickupByDonation.set(key, d);
+      else dropoffByDonation.set(key, d);
+    }
 
     const inventario = (donationsResponse.data.donaciones ?? []).map((donation) => {
-      const delivery = deliveriesByDonationId.get(String(donation.apiId));
-      const estado = normalizeStatus(delivery?.estado ?? donation.estado);
+      const key = String(donation.apiId);
+      const pickup = pickupByDonation.get(key);
+      const dropoff = dropoffByDonation.get(key);
+      const estado = donation.estado;
       return {
         id: donation.id,
         apiId: donation.apiId,
         tipo: donation.tipoDonacion,
         cantidad: donation.cantidad,
         unidad: donation.unidadMedida,
+        descripcion: donation.descripcion,
+        imageUrl: donation.imageUrl,
         estado,
-        asignado: Boolean(delivery),
-        disponibleParaAsignar: !delivery && estado !== "Entregado",
-        asignadoA: delivery?.destino ?? null,
-        transportista: delivery?.transportista,
+        puedeAsignarRecoleccion: estado === "Pendiente" && !pickup,
+        recoleccionEnCurso: estado === "Pendiente" && Boolean(pickup),
+        puedeClasificar: estado === "Recibido",
+        puedeAsignarEntrega: estado === "Clasificado" && !dropoff,
+        entregaAsignada: estado === "Clasificado" && Boolean(dropoff),
+        asignadoA: dropoff?.destino ?? null,
+        transportistaRecoleccion: pickup?.transportista ?? null,
+        transportistaEntrega: dropoff?.transportista ?? null,
         recibido: donation.fecha,
       };
     });
@@ -323,9 +361,14 @@ export const inventoryService = {
       transporter_id: numericId(data.transporterId),
       collection_address: data.collectionAddress,
       destination: data.destination,
-      delivery_type: data.deliveryType || "pickup",
+      delivery_type: data.deliveryType,
     });
     return responseWith(response, { asignacion: toAssignment(response.data.delivery) });
+  },
+
+  clasificar: async (id) => {
+    const response = await donationService.cambiarEstado(id, "Clasificado");
+    return response;
   },
 };
 

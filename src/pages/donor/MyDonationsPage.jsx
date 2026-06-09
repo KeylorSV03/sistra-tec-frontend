@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, SlidersHorizontal, Plus } from "lucide-react";
-import { toast } from "react-toastify";
 
 import { useDonorNav } from "../../hooks/useDonorNav.jsx";
 import { usePageTitle } from "../../hooks/usePageTitle.js";
@@ -13,6 +12,7 @@ import FilterTabs from "../../components/ui/FilterTabs";
 import StatusBadge from "../../components/ui/StatusBadge";
 import DonationIcon from "../../components/ui/DonationIcon";
 import Button from "../../components/ui/Button";
+import DonationDetailModal from "../../components/ui/DonationDetailModal";
 
 const ALL_STATUSES = ["Todas", "Pendiente", "Recibido", "Clasificado", "En tránsito", "Entregado"];
 
@@ -25,6 +25,7 @@ export default function MyDonationsPage() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("Todas");
   const [page, setPage] = useState(1);
+  const [selectedDonation, setSelectedDonation] = useState(null);
   const PER_PAGE = 10;
 
   useEffect(() => {
@@ -123,7 +124,15 @@ export default function MyDonationsPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {paginated.map((d) => (
-                  <tr key={d.id} className="hover:bg-gray-50 transition">
+                  <tr
+                    key={d.id}
+                    className="hover:bg-gray-50 transition cursor-pointer"
+                    onClick={() => setSelectedDonation(d)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Ver detalle de donación ${d.id}, ${d.tipoDonacion}`}
+                    onKeyDown={(e) => e.key === "Enter" && setSelectedDonation(d)}
+                  >
                     <td className="py-4 text-gray-700 font-mono text-xs">{d.id}</td>
                     <td className="py-4">
                       <div className="flex items-center gap-3">
@@ -181,6 +190,12 @@ export default function MyDonationsPage() {
           </>
         )}
       </div>
+      {selectedDonation && (
+        <DonationDetailModal
+          donation={selectedDonation}
+          onClose={() => setSelectedDonation(null)}
+        />
+      )}
     </DashboardLayout>
   );
 }

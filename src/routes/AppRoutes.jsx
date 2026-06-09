@@ -4,6 +4,9 @@ import ProtectedRoute from "../components/ui/ProtectedRoute";
 // ── Public ──────────────────────────────────────────────────────────────────
 import LoginPage from "../pages/public/LoginPage";
 import RegisterPage from "../pages/public/RegisterPage";
+import ForgotPasswordPage from "../pages/public/ForgotPasswordPage";
+import VerifyResetCodePage from "../pages/public/VerifyResetCodePage";
+import ResetPasswordPage from "../pages/public/ResetPasswordPage";
 
 // ── Donor (tipoUsuario === 2) ────────────────────────────────────────────────
 import DonorDashboard from "../pages/donor/DonorDashboard";
@@ -32,6 +35,9 @@ export default function AppRoutes() {
       {/* ── Public ── */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/forgot-password/verify" element={<VerifyResetCodePage />} />
+      <Route path="/forgot-password/reset" element={<ResetPasswordPage />} />
 
       {/* ── Donor ── */}
       <Route element={<ProtectedRoute role={2} />}>
